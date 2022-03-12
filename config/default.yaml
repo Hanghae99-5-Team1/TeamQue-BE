@@ -1,0 +1,11 @@
+server:
+  port: 3000
+
+db:
+  type: 'mysql'
+  port: 3307
+  database: 'test'
+
+jwt:
+  expriesIn: 3600
+  secret: 'my-secret-33'
