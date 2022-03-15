@@ -2,48 +2,75 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Post,
+  Put,
   Query,
+  Redirect,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-// import { query } from 'express';
 import { AuthService } from './auth.service';
-// import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import { GetUser } from './get-user.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { User } from './user.entity';
+import { RefreshService } from './refresh.service';
+import { AuthCredentialsDto } from './dto/auth-credential.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private refreshService: RefreshService,
+  ) {}
 
-  // @Post('/signup')
-  // signup(
-  //   @Body(ValidationPipe) authcredentialsDto: AuthCredentialsDto,
-  // ): Promise<void> {
-  //   return this.authService.signUp(authcredentialsDto);
-  // }
+  @Post('/signup')
+  signup(
+    @Body(ValidationPipe) authcredentialsDto: AuthCredentialsDto,
+  ): Promise<object> {
+    return this.authService.signUp(authcredentialsDto);
+  }
 
-  // @Post('/signIn')
-  // signIn(
-  //   @Body(ValidationPipe) authcredentialsDto: AuthCredentialsDto,
-  // ): Promise<{ accessToken: string }> {
-  //   return this.authService.signIn(authcredentialsDto);
-  // }
+  @Post('/email-verify')
+  @Redirect('http://localhost:3000')
+  async emailVerify(@Query() dto) {
+    const { signupVerifyToken } = dto;
+    this.authService.verifyEmail(signupVerifyToken);
+  }
+
+  @Post('/signIn')
+  signIn(@Body() Dto): Promise<object> {
+    return this.authService.signIn(Dto);
+  }
 
   @Get('/kakao/callback')
   kakaoSignin(@Query() query) {
-    console.log('controller');
-    console.log(`query: ${query.code}`);
     return this.authService.kakaoSignin(query.code);
   }
 
-  @Post('/test')
-  @UseGuards(AuthGuard('jwt'))
-  // test(@Req() req) {
-  //   console.log('req', req);
-  // }
+  @Post('/refresh')
+  @UseGuards(JwtRefreshGuard)
+  refreshToken(@GetUser() user, @Headers('authorization') token1: string) {
+    const token = token1.split(' ')[1];
+    return this.refreshService.getUserIfRefreshTokenMatches(token, user);
+  }
+
+  @Put('/nickname')
+  @UseGuards(JwtAuthGuard)
+  modifyUsername(@Body() Dto, @GetUser() user: User) {
+    console.log(Dto);
+    return this.authService.modifyUsername(Dto.nickname, user.id);
+  }
+
+  @Post('/logout')
+  @UseGuards(JwtAuthGuard)
+  logoutUser(@GetUser() user) {
+    this.refreshService.removeRefreshToken(user.id);
+  }
+
+  @Get('/test')
+  @UseGuards(JwtAuthGuard)
   test(@GetUser() user: User) {
     console.log('user', user);
     return user;

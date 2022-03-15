@@ -7,6 +7,9 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UserRepository } from './user.repository';
 import * as config from 'config';
+import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { RefreshService } from './refresh.service';
+import { EmailService } from './email.service';
 
 const jwtConfig = config.get('jwt');
 
@@ -16,13 +19,19 @@ const jwtConfig = config.get('jwt');
     JwtModule.register({
       secret: jwtConfig.secret,
       signOptions: {
-        expiresIn: 3600,
+        expiresIn: jwtConfig.expiresIn,
       },
     }),
     TypeOrmModule.forFeature([UserRepository]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    RefreshService,
+    EmailService,
+  ],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

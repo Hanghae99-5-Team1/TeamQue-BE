@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Board } from 'src/boards/board.entity';
 import {
   BaseEntity,
@@ -9,7 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-@Unique(['username'])
+@Unique(['userEmail'])
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -17,14 +18,18 @@ export class User extends BaseEntity {
   @Column()
   username: string;
 
-  // @Column()
-  // password: string;
+  @Column({ nullable: true, default: null })
+  password: string;
 
   @Column()
   userEmail: string;
 
-  @Column()
+  @Column({ nullable: true })
   provider: string;
+
+  @Column({ nullable: true })
+  @Exclude()
+  currentHashedRefreshToken?: string;
 
   @OneToMany((type) => Board, (board) => board.user, { eager: true })
   boards: Board[];

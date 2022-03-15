@@ -7,5 +7,18 @@ db:
   database: 'test'
 
 jwt:
-  expriesIn: 3600
+  expiresIn: 3600
   secret: 'my-secret-33'
+
+refresh:
+  secret: 'my-secret-486'
+
+kakao:
+  client_id: '2161226dcbb0f02963a2cdb86da38d87'
+  redirect_uri: 'http://localhost:3000/auth/kakao/callback'
+  client_secret: 'ewgnhf8Sjs4WoBkhSlfEbrHe3G8CKc8m'
+
+email:
+  user: 'whwhssk'
+  pass: 'wkisrflnqnthpttj'
+  baseUrl: 'http://13.124.123.143:3000'
