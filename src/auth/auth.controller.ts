@@ -39,7 +39,7 @@ export class AuthController {
     this.authService.verifyEmail(signupVerifyToken);
   }
 
-  @Post('/signIn')
+  @Post('/signin')
   signIn(@Body() Dto): Promise<object> {
     return this.authService.signIn(Dto);
   }

@@ -84,7 +84,7 @@ export class AuthService {
       const refreshToken = await this.makeRefreshToken(user.userEmail);
       const id = user.id;
       await this.userService.CurrnetRefreshToken(refreshToken, id);
-      return { accessToken, refreshToken };
+      return { accessToken, refreshToken, nickname: user.username };
     } else {
       return {
         statusCode: 400,

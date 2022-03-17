@@ -1,12 +1,16 @@
 import { User } from 'src/auth/user.entity';
+import { ClassList } from 'src/class/class.entity';
 import {
   BaseEntity,
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { BoardStatus } from './board-status.enum';
+import { Comment } from './comment.entity';
 
 @Entity()
 export class Board extends BaseEntity {
@@ -20,8 +24,31 @@ export class Board extends BaseEntity {
   description: string;
 
   @Column()
-  status: BoardStatus;
+  writer: string;
 
-  @ManyToOne((type) => User, (user) => user.boards, { eager: false })
+  @Column()
+  boardType: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ nullable: true })
+  userId: number;
+
+  @Column({ nullable: true })
+  classId: number;
+
+  @OneToMany((type) => Comment, (comment) => comment.board, { lazy: true })
+  comments: Comment[];
+
+  @ManyToOne((type) => User, (user) => user.boards, { onDelete: 'CASCADE' })
   user: User;
+
+  @ManyToOne((type) => ClassList, (classlist) => classlist.boards, {
+    onDelete: 'CASCADE',
+  })
+  class: ClassList;
 }

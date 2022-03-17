@@ -4,59 +4,86 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
-  Patch,
   Post,
+  Put,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
-import { BoardStatus } from './board-status.enum';
-import { CreateBoardDto } from './dto/creat-board.dto';
-import { BoardStatusValidationPipe } from './pipes/board-status-validation.pipe';
 import { Board } from './board.entity';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { User } from 'src/auth/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Comment } from './comment.entity';
 
 @Controller('boards')
 @UseGuards(JwtAuthGuard)
 export class BoardsController {
   constructor(private boardsService: BoardsService) {}
 
-  @Get('/')
-  getAllBoard(@GetUser() user: User): Promise<Board[]> {
-    return this.boardsService.getAllBoards(user);
-  }
+  // @Get('/')
+  // getAllBoard(@GetUser() user: User): Promise<Board[]> {
+  //   return this.boardsService.getAllBoards(user);
+  // }
 
-  @Post('/')
-  @UsePipes(ValidationPipe)
+  @Post('/:classid')
   createBoard(
-    @Body() createBoardDto: CreateBoardDto,
+    @Param('classid') id: number,
+    @Body() Dto,
     @GetUser() user: User,
   ): Promise<Board> {
-    return this.boardsService.createBoard(createBoardDto, user);
+    return this.boardsService.createBoard(Dto, user, id);
   }
 
-  @Get('/:id')
-  getBoardById(@Param('id') id: number): Promise<Board> {
-    return this.boardsService.getBoardById(id);
+  @Get('/:classid')
+  getBoardByClassId(@Param('classid') id: number): Promise<object> {
+    return this.boardsService.getBoardByClassId(id);
   }
 
-  @Delete('/:id')
+  @Get('/board/:boardid')
+  getBoardSelested(@Param('boardid') id: number) {
+    return this.boardsService.getBoardSelested(id);
+  }
+
+  @Delete('/:boardid')
   deleteBoard(
-    @Param('id', ParseIntPipe) id,
+    @Param('boardid') id: number,
     @GetUser() user: User,
   ): Promise<void> {
     return this.boardsService.deleteBoard(id, user);
   }
 
-  @Patch('/:id/status')
-  updateBoardStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status', BoardStatusValidationPipe) status: BoardStatus,
+  @Put('/:boardid')
+  updateBoard(
+    @Param('boardid') id: number,
+    @Body() Dto,
+    @GetUser() user: User,
   ) {
-    return this.boardsService.updateBoardStatus(id, status);
+    return this.boardsService.updateBoard(Dto, user, id);
+  }
+
+  @Post('/comment/:boardid')
+  createComment(
+    @Param('boardid') id: number,
+    @Body() Dto,
+    @GetUser() user: User,
+  ): Promise<Comment> {
+    return this.boardsService.createComment(Dto, user, id);
+  }
+
+  @Delete('/comment/:commentid')
+  deleteComment(
+    @Param('commnetid') id: number,
+    @GetUser() user: User,
+  ): Promise<void> {
+    return this.boardsService.deleteComment(id, user);
+  }
+
+  @Put('/comment/:commentid')
+  updateComment(
+    @Param('commentid') id: number,
+    @Body() Dto,
+    @GetUser() user: User,
+  ) {
+    return this.boardsService.updateComment(Dto, user, id);
   }
 }

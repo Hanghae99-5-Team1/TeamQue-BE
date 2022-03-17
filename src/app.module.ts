@@ -4,10 +4,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BoardsModule } from './boards/boards.module';
 import { typeORMConfig } from './configs/typeorm.config';
 import { AuthModule } from './auth/auth.module';
+import { ClassModule } from './class/classes.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeORMConfig), BoardsModule, AuthModule],
-  providers: [],
+  imports: [
+    TypeOrmModule.forRoot(typeORMConfig),
+    BoardsModule,
+    AuthModule,
+    ClassModule,
+  ],
 })
 export class AppModule {
   constructor(private connection: Connection) {}
