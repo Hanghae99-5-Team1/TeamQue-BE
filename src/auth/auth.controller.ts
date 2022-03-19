@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   Post,
@@ -56,17 +57,28 @@ export class AuthController {
     return this.refreshService.getUserIfRefreshTokenMatches(token, user);
   }
 
-  @Put('/nickname')
+  @Put('/modifyinfo')
   @UseGuards(JwtAuthGuard)
   modifyUsername(@Body() Dto, @GetUser() user: User) {
-    console.log(Dto);
-    return this.authService.modifyUsername(Dto.nickname, user.id);
+    if (Dto.nickname) {
+      this.authService.modifyUsername(Dto.nickname, user.id);
+    }
+    if (Dto.password && Dto.confirmPassword) {
+      this.authService.modifyPassword(Dto, user.id);
+    }
+    return { success: true, message: '수정성공' };
   }
 
   @Post('/logout')
   @UseGuards(JwtAuthGuard)
-  logoutUser(@GetUser() user) {
-    this.refreshService.removeRefreshToken(user.id);
+  logoutUser(@GetUser() user): Promise<object> {
+    return this.refreshService.removeRefreshToken(user.id);
+  }
+
+  @Delete('/withdrawal')
+  @UseGuards(JwtAuthGuard)
+  withdrawalUser(@GetUser() user): Promise<object> {
+    return this.authService.deleteUser(user);
   }
 
   @Get('/test')

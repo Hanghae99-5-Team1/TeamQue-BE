@@ -28,6 +28,9 @@ export class ClassList extends BaseEntity {
   teacher: string;
 
   @Column({ nullable: true })
+  imageUrl?: string;
+
+  @Column({ nullable: true })
   userId: number;
 
   @CreateDateColumn({ name: 'created_at' })

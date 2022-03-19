@@ -1,8 +1,8 @@
 // import { BadRequestException, PipeTransform } from '@nestjs/common';
-// import { BoardStatus } from '../board-status.enum';
+// import { BoardTypes } from '../model/boardType.model';
 
 // export class BoardStatusValidationPipe implements PipeTransform {
-//   readonly StatusOptions = [BoardStatus.PRIVATE, BoardStatus.PUBLIC];
+//   readonly StatusOptions = [BoardTypes.Notice, BoardTypes.Question];
 //   transform(value: any) {
 //     value = value.toUpperCase();
 //     if (!this.isStatusValid(value)) {

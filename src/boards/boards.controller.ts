@@ -6,14 +6,20 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { Board } from './board.entity';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { User } from 'src/auth/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Comment } from './comment.entity';
+import { CreateBoardDto } from './dto/creat-board.dto';
+import { CreateCommnetDto } from './dto/creat-comment.dto';
+import { CreateTodoDto } from './dto/creat-todo.dto';
+import { Todo } from './todo.entity';
 
 @Controller('boards')
 @UseGuards(JwtAuthGuard)
@@ -24,49 +30,38 @@ export class BoardsController {
   // getAllBoard(@GetUser() user: User): Promise<Board[]> {
   //   return this.boardsService.getAllBoards(user);
   // }
-
-  @Post('/:classid')
-  createBoard(
-    @Param('classid') id: number,
-    @Body() Dto,
+  @Post('/todo')
+  createTodo(
+    @Body() Dto: CreateTodoDto,
     @GetUser() user: User,
-  ): Promise<Board> {
-    return this.boardsService.createBoard(Dto, user, id);
+  ): Promise<object> {
+    return this.boardsService.createTodo(Dto, user);
   }
 
-  @Get('/:classid')
-  getBoardByClassId(@Param('classid') id: number): Promise<object> {
-    return this.boardsService.getBoardByClassId(id);
+  @Get('/todo')
+  getTodo(@GetUser() user: User): Promise<Todo[]> {
+    return this.boardsService.getTodo(user);
   }
 
-  @Get('/board/:boardid')
-  getBoardSelested(@Param('boardid') id: number) {
-    return this.boardsService.getBoardSelested(id);
-  }
-
-  @Delete('/:boardid')
-  deleteBoard(
-    @Param('boardid') id: number,
+  @Delete('/todo/:todoid')
+  deleteTodo(
+    @Param('todoid') id: number,
     @GetUser() user: User,
-  ): Promise<void> {
-    return this.boardsService.deleteBoard(id, user);
+  ): Promise<object> {
+    return this.boardsService.deleteTodo(id, user);
   }
 
-  @Put('/:boardid')
-  updateBoard(
-    @Param('boardid') id: number,
-    @Body() Dto,
-    @GetUser() user: User,
-  ) {
-    return this.boardsService.updateBoard(Dto, user, id);
+  @Put('/todo/:todoid')
+  updateTodo(@Param('todoid') id: number): Promise<object> {
+    return this.boardsService.updateTodo(id);
   }
 
   @Post('/comment/:boardid')
   createComment(
     @Param('boardid') id: number,
-    @Body() Dto,
+    @Body() Dto: CreateCommnetDto,
     @GetUser() user: User,
-  ): Promise<Comment> {
+  ): Promise<object> {
     return this.boardsService.createComment(Dto, user, id);
   }
 
@@ -74,16 +69,59 @@ export class BoardsController {
   deleteComment(
     @Param('commnetid') id: number,
     @GetUser() user: User,
-  ): Promise<void> {
+  ): Promise<object> {
     return this.boardsService.deleteComment(id, user);
   }
 
   @Put('/comment/:commentid')
   updateComment(
     @Param('commentid') id: number,
-    @Body() Dto,
+    @Body() Dto: CreateCommnetDto,
     @GetUser() user: User,
-  ) {
+  ): Promise<object> {
     return this.boardsService.updateComment(Dto, user, id);
+  }
+
+  @Get('/board/:boardid')
+  getBoardSelested(
+    @Param('boardid') id: number,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.boardsService.getBoardSelested(user, id);
+  }
+
+  @Delete('/:boardid')
+  deleteBoard(
+    @Param('boardid') id: number,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.boardsService.deleteBoard(id, user);
+  }
+
+  @Post('/:classid')
+  @UsePipes(ValidationPipe)
+  createBoard(
+    @Param('classid') id: number,
+    @Body() Dto: CreateBoardDto,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.boardsService.createBoard(Dto, user, id);
+  }
+
+  @Get('/:classid')
+  getBoardByClassId(
+    @Param('classid') id: number,
+    @Query() query,
+  ): Promise<object> {
+    return this.boardsService.getBoardByClassId(id, query.page);
+  }
+
+  @Put('/:boardid')
+  updateBoard(
+    @Param('boardid') id: number,
+    @Body() Dto: CreateBoardDto,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.boardsService.updateBoard(Dto, user, id);
   }
 }

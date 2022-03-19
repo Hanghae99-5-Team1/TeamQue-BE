@@ -4,15 +4,16 @@ import { ClassList } from './class.entity';
 
 @EntityRepository(ClassList)
 export class ClassListRepository extends Repository<ClassList> {
-  async createClass(Dto, user: User): Promise<ClassList> {
-    const { title, time } = Dto;
+  async createClass(Dto, user: User): Promise<object> {
+    const { title, time, imageUrl } = Dto;
     const classlist = this.create({
       user,
       title,
       time,
       teacher: user.username,
+      imageUrl,
     });
     await this.save(classlist);
-    return classlist;
+    return { success: true, message: '클레스 생성 성공' };
   }
 }

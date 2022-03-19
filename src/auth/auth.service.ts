@@ -1,4 +1,11 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from './user.repository';
 import * as bcrypt from 'bcryptjs';
@@ -29,11 +36,12 @@ export class AuthService {
       userEmail: Dto.userEmail,
     });
     if (user) {
-      return {
-        statusCode: 400,
-        message: 'This email has already been signed up.',
-        provider: user.provider,
-      };
+      throw new BadRequestException(
+        `${user.provider}로 이미 이메일이 사용된적있어요`,
+      );
+    }
+    if (Dto.password !== Dto.confirmPassword) {
+      throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
     const signupVerifyToken = uuid.v1();
     await this.sendMemberJoinEmail(Dto.userEmail, signupVerifyToken);
@@ -45,7 +53,7 @@ export class AuthService {
       Dto.password,
       signupVerifyToken,
     );
-    return { message: '이메일인증을 해주세요' };
+    return { success: true, message: '이메일인증을 해주세요' };
   }
 
   private async sendMemberJoinEmail(email: string, signupVerifyToken: string) {
@@ -75,22 +83,30 @@ export class AuthService {
 
     if (user && (await bcrypt.compare(password, user.password))) {
       if (user.provider === null) {
-        return {
-          statusCode: 400,
-          message: '이메일 인증을 확인해주세요',
-        };
+        throw new BadRequestException('이메일 인증을 확인해주세요');
       }
       const accessToken = await this.makeAccessToken(user.userEmail);
       const refreshToken = await this.makeRefreshToken(user.userEmail);
       const id = user.id;
       await this.userService.CurrnetRefreshToken(refreshToken, id);
-      return { accessToken, refreshToken, nickname: user.username };
-    } else {
       return {
-        statusCode: 400,
-        message: '로그인 실패',
+        accessToken,
+        refreshToken,
+        nickname: user.username,
+        success: true,
+        message: '로그인성공',
       };
+    } else {
+      throw new UnauthorizedException('유저정보가 정확하지않습니다.');
     }
+  }
+
+  async deleteUser(user) {
+    const result = await this.userRepository.delete({ id: user.id });
+    if (result.affected === 0) {
+      throw new NotFoundException('회원 탈퇴 실패!!!');
+    }
+    return { success: true, message: '잘가세요..' };
   }
 
   async makeAccessToken(userEmail) {
@@ -109,7 +125,15 @@ export class AuthService {
 
   async modifyUsername(username: string, id) {
     await this.userRepository.update(id, { username });
-    return { nickname: username };
+  }
+
+  async modifyPassword(Dto, id) {
+    if (Dto.password !== Dto.confirmPassword) {
+      throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
+    }
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(Dto.password, salt);
+    await this.userRepository.update(id, { password: hashedPassword });
   }
 
   async kakaoSignin(query) {
@@ -154,7 +178,13 @@ export class AuthService {
     const refreshToken = await this.makeRefreshToken(userEmail);
     if (user) {
       this.userService.CurrnetRefreshToken(refreshToken, user['id']);
-      return { accessToken, refreshToken, nickname: user['username'] };
+      return {
+        success: true,
+        accessToken,
+        refreshToken,
+        nickname: user['username'],
+        message: '카카오 로그인 성공',
+      };
     } else {
       const newUser = await this.userRepository.createUser(
         userEmail,
@@ -162,7 +192,12 @@ export class AuthService {
         'kakao',
       );
       this.userService.CurrnetRefreshToken(refreshToken, newUser);
-      return { accessToken, refreshToken };
+      return {
+        success: true,
+        accessToken,
+        refreshToken,
+        message: '카카오 인증 및 로그인 성공',
+      };
     }
   }
 }

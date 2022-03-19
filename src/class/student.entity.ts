@@ -24,11 +24,15 @@ export class Student extends BaseEntity {
   @Column({ nullable: true })
   userId: number;
 
+  @Column()
+  username: string;
+
   @Column({ nullable: true })
   classId: number;
 
   @ManyToOne((type) => ClassList, (classlist) => classlist.students, {
     onDelete: 'CASCADE',
+    lazy: true,
   })
   class: ClassList;
 

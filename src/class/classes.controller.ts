@@ -13,29 +13,12 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User } from 'src/auth/user.entity';
 import { ClassList } from './class.entity';
 import { ClassService } from './class.service';
+import { CreateClassDto } from './dto/create-class.dto';
 
 @Controller('class')
 @UseGuards(JwtAuthGuard)
 export class ClassController {
   constructor(private classService: ClassService) {}
-
-  @Post('/')
-  createClass(@Body() Dto, @GetUser() user: User): Promise<ClassList> {
-    return this.classService.createClass(Dto, user);
-  }
-
-  @Get('/')
-  getClass(@GetUser() user: User): Promise<ClassList[]> {
-    return this.classService.getClass(user);
-  }
-
-  @Delete('/:classid')
-  deleteClass(
-    @Param('classid') id: number,
-    @GetUser() user: User,
-  ): Promise<void> {
-    return this.classService.deleteClass(id, user);
-  }
 
   @Get('/date/:classid')
   getclassdate(@Param('classid') id: number) {
@@ -74,6 +57,7 @@ export class ClassController {
   createStudent(@Param('classid') id: number, @GetUser() user: User) {
     return this.classService.createStudent(id, user);
   }
+
   @Get('/student/class')
   getClassInStudent(@GetUser() user: User) {
     return this.classService.getClassInStudent(user);
@@ -86,5 +70,43 @@ export class ClassController {
   @Delete('/student/:studentid')
   deleteStudent(@Param('studentid') id: number, @GetUser() user: User) {
     return this.classService.deleteStudent(id, user);
+  }
+
+  @Post('/')
+  createClass(
+    @Body() Dto: CreateClassDto,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.classService.createClass(Dto, user);
+  }
+
+  @Get('/')
+  getClass(@GetUser() user: User): Promise<ClassList[]> {
+    return this.classService.getClass(user);
+  }
+
+  @Get('/:classid')
+  getSelectedClass(
+    @GetUser() user: User,
+    @Param('classid') id: number,
+  ): Promise<object> {
+    return this.classService.getSelectedClass(id, user);
+  }
+
+  @Put('/:classid')
+  updateClass(
+    @Param('classid') id: number,
+    @Body() Dto: CreateClassDto,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.classService.updateClass(Dto, id, user);
+  }
+
+  @Delete('/:classid')
+  deleteClass(
+    @Param('classid') id: number,
+    @GetUser() user: User,
+  ): Promise<object> {
+    return this.classService.deleteClass(id, user);
   }
 }

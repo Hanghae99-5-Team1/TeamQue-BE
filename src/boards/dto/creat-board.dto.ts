@@ -1,9 +1,13 @@
 import { IsNotEmpty } from 'class-validator';
+import { BoardTypes } from '../model/boardType.model';
 
 export class CreateBoardDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '제목을 입력해주세요' })
   title: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '내용을 입력해주세요' })
   description: string;
+
+  @IsNotEmpty()
+  boardType: BoardTypes;
 }

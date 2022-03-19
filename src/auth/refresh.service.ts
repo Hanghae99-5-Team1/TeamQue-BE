@@ -29,13 +29,14 @@ export class RefreshService {
       const accessToken = await this.authService.makeAccessToken(
         user.userEmail,
       );
-      return { accessToken };
+      return { success: true, accessToken, message: 'access토큰발행 성공' };
     }
   }
 
   async removeRefreshToken(id: number) {
-    return this.userRepository.update(id, {
+    this.userRepository.update(id, {
       currentHashedRefreshToken: null,
     });
+    return { success: true, message: '로그아웃 성공' };
   }
 }

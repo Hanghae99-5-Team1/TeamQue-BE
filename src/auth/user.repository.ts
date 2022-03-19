@@ -35,7 +35,7 @@ export class UserRepository extends Repository<User> {
     } catch (error) {
       console.log(error);
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException('Existing Email');
+        throw new ConflictException('존재하는 이메일');
       } else {
         throw new InternalServerErrorException();
       }

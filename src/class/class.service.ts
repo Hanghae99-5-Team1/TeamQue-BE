@@ -25,15 +25,29 @@ export class ClassService {
     return await this.classlistRepository.find({ user });
   }
 
-  async createClass(Dto, user: User): Promise<ClassList> {
+  async getSelectedClass(id, user): Promise<object> {
+    return await this.classlistRepository.findOne({ id, user });
+  }
+
+  async createClass(Dto, user: User): Promise<object> {
     return await this.classlistRepository.createClass(Dto, user);
   }
 
-  async deleteClass(id, user: User): Promise<void> {
+  async updateClass(Dto, id, user): Promise<object> {
+    const { title, time } = Dto;
+    const classlist = await this.classlistRepository.findOne({ id, user });
+    classlist.title = title;
+    classlist.time = time;
+    await this.classlistRepository.save(classlist);
+    return { success: true, message: '클레스 수정 성공' };
+  }
+
+  async deleteClass(id, user: User): Promise<object> {
     const result = await this.classlistRepository.delete({ id, user });
     if (result.affected === 0) {
-      throw new NotFoundException(`Can't delete Class with id ${id}`);
+      throw new NotFoundException('클레스 삭제 실패');
     }
+    return { success: true, message: '클레스 삭제 성공' };
   }
 
   async getClassDate(id) {
@@ -62,7 +76,7 @@ export class ClassService {
     classdate.day = day;
     classdate.time = time;
     await this.classdateRepository.save(classdate);
-    return classdate;
+    return { success: true, message: '클레스 달력 수정 성공' };
   }
 
   async deleteClassDate(classid, classdateid, user) {
@@ -75,10 +89,9 @@ export class ClassService {
       class: classlist,
     });
     if (result.affected === 0) {
-      throw new NotFoundException(
-        `Can't delete classdate with id ${classdateid}`,
-      );
+      throw new NotFoundException('클레스 달력 삭제 실패');
     }
+    return { success: true, message: '클레스 달력 삭제 성공' };
   }
 
   async createStudent(id, user: User) {
@@ -92,13 +105,17 @@ export class ClassService {
   }
 
   async getClassInStudent(user: User) {
-    return await this.studentRepository.find({ user });
+    return await this.studentRepository.find({
+      where: { user },
+      relations: ['class'],
+    });
   }
 
   async deleteStudent(id, user: User) {
     const result = await this.studentRepository.delete({ id, user });
     if (result.affected === 0) {
-      throw new NotFoundException(`Can't delete student with id ${id}`);
+      throw new NotFoundException('수강 취소 실패');
     }
+    return { success: true, message: '수강 취소 성공' };
   }
 }

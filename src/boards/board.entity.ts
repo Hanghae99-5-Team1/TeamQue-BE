@@ -11,8 +11,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
+import { BoardTypes } from './model/boardType.model';
 
-@Entity()
+@Entity({ orderBy: { created_at: 'DESC', id: 'DESC' } })
 export class Board extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -38,8 +39,8 @@ export class Board extends BaseEntity {
   @Column({ nullable: true })
   userId: number;
 
-  @Column({ nullable: true })
-  classId: number;
+  // @Column({ nullable: true })
+  // classId: number;
 
   @OneToMany((type) => Comment, (comment) => comment.board, { lazy: true })
   comments: Comment[];

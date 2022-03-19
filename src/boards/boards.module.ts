@@ -6,10 +6,15 @@ import { BoardRepository } from './board.repository';
 import { BoardsController } from './boards.controller';
 import { BoardsService } from './boards.service';
 import { CommentRepository } from './comment.repository';
+import { TodoRepository } from './todo.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([BoardRepository, CommentRepository]),
+    TypeOrmModule.forFeature([
+      BoardRepository,
+      CommentRepository,
+      TodoRepository,
+    ]),
     AuthModule,
     ClassModule,
   ],

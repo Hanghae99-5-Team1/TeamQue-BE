@@ -9,8 +9,9 @@ export class StudentRepository extends Repository<Student> {
     const student = this.create({
       class: classlist,
       user,
+      username: user.username,
     });
     await this.save(student);
-    return student;
+    return { success: true, message: '수강 신청 성공' };
   }
 }

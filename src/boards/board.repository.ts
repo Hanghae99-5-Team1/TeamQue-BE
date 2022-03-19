@@ -4,7 +4,7 @@ import { Board } from './board.entity';
 
 @EntityRepository(Board)
 export class BoardRepository extends Repository<Board> {
-  async createBoard(Dto, user: User, classList): Promise<Board> {
+  async createBoard(Dto, user: User, classList): Promise<object> {
     const { title, description, boardType } = Dto;
     const board = this.create({
       title,
@@ -15,6 +15,6 @@ export class BoardRepository extends Repository<Board> {
       class: classList,
     });
     await this.save(board);
-    return board;
+    return { success: true, message: '게시글작성 성공' };
   }
 }

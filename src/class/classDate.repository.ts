@@ -14,6 +14,6 @@ export class ClassDateRepository extends Repository<ClassDate> {
       time,
     });
     await this.save(classdate);
-    return classdate;
+    return { success: true, message: '클레스 달력 생성 성공' };
   }
 }

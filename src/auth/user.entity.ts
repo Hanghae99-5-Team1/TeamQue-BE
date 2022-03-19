@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { Board } from 'src/boards/board.entity';
 import { Comment } from 'src/boards/comment.entity';
+import { Todo } from 'src/boards/todo.entity';
 import { ClassList } from 'src/class/class.entity';
 import { Student } from 'src/class/student.entity';
 import {
@@ -47,6 +48,9 @@ export class User extends BaseEntity {
 
   @OneToMany((type) => Board, (board) => board.user)
   boards: Board[];
+
+  @OneToMany((type) => Todo, (todo) => todo.user)
+  todos: Todo[];
 
   @OneToMany((type) => ClassList, (classlist) => classlist.user)
   classes: ClassList[];
