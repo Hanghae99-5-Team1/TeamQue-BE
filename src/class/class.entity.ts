@@ -27,7 +27,7 @@ export class ClassList extends BaseEntity {
   @Column()
   teacher: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   imageUrl?: string;
 
   @Column({ nullable: true })
@@ -45,7 +45,9 @@ export class ClassList extends BaseEntity {
   @OneToMany((type) => Board, (board) => board.class)
   boards: Board[];
 
-  @OneToMany((type) => ClassDate, (classdate) => classdate.class)
+  @OneToMany((type) => ClassDate, (classdate) => classdate.class, {
+    lazy: true,
+  })
   classdates: ClassDate[];
 
   @ManyToOne((type) => User, (user) => user.classes, { onDelete: 'CASCADE' })

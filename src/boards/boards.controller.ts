@@ -12,7 +12,6 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
-import { Board } from './board.entity';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { User } from 'src/auth/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -31,16 +30,22 @@ export class BoardsController {
   //   return this.boardsService.getAllBoards(user);
   // }
   @Post('/todo')
-  createTodo(
-    @Body() Dto: CreateTodoDto,
-    @GetUser() user: User,
-  ): Promise<object> {
+  createTodo(@Body() Dto: CreateTodoDto, @GetUser() user: User) {
     return this.boardsService.createTodo(Dto, user);
   }
 
   @Get('/todo')
   getTodo(@GetUser() user: User): Promise<Todo[]> {
     return this.boardsService.getTodo(user);
+  }
+
+  @Put('/todo/change/:todoid1/:todoid2')
+  changeOrderTodo(
+    @Param('todoid1') todoid1,
+    @Param('todoid2') todoid2,
+    @GetUser() user: User,
+  ) {
+    return this.boardsService.changeOrderTodo(todoid1, todoid2, user);
   }
 
   @Delete('/todo/:todoid')

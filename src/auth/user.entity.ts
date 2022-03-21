@@ -33,7 +33,7 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   provider: string;
 
-  @Column({ nullable: true })
+  @Column({ default: '배움은 끝이 없다.', nullable: true })
   oneword: string;
 
   @Column({ nullable: true })

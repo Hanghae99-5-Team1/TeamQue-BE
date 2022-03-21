@@ -44,6 +44,11 @@ export class ClassController {
     return this.classService.updateClassDate(Dto, classid, classdateid, user);
   }
 
+  @Delete('/date/all/:classid')
+  deleteAllClassDate(@Param('classid') classid: number, @GetUser() user: User) {
+    return this.classService.deleteAllClassDate(classid, user);
+  }
+
   @Delete('/date/:classid/:classdateid')
   deleteClassDate(
     @Param('classid') classid: number,
@@ -70,6 +75,16 @@ export class ClassController {
   @Delete('/student/:studentid')
   deleteStudent(@Param('studentid') id: number, @GetUser() user: User) {
     return this.classService.deleteStudent(id, user);
+  }
+
+  @Put('/student/:studentid/:classid')
+  updateStudentState(
+    @Param('studentid') studentid: number,
+    @Param('classid') classid: number,
+    @GetUser() user: User,
+    @Body() Dto,
+  ) {
+    return this.classService.updateStudentState(Dto, studentid, classid, user);
   }
 
   @Post('/')

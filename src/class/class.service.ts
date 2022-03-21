@@ -26,7 +26,10 @@ export class ClassService {
   }
 
   async getSelectedClass(id, user): Promise<object> {
-    return await this.classlistRepository.findOne({ id, user });
+    return await this.classlistRepository.findOne({
+      where: { id, user },
+      relations: ['classdates'],
+    });
   }
 
   async createClass(Dto, user: User): Promise<object> {
@@ -93,6 +96,17 @@ export class ClassService {
     }
     return { success: true, message: '클레스 달력 삭제 성공' };
   }
+  async deleteAllClassDate(classid, user) {
+    const classlist = await this.classlistRepository.findOne({
+      id: classid,
+      user,
+    });
+    const result = await this.classdateRepository.delete({ class: classlist });
+    if (result.affected === 0) {
+      throw new NotFoundException('클레스 달력 삭제 실패');
+    }
+    return { success: true, message: '클레스 달력 전부 삭제 성공' };
+  }
 
   async createStudent(id, user: User) {
     const classlist = await this.classlistRepository.findOne({ id });
@@ -105,10 +119,11 @@ export class ClassService {
   }
 
   async getClassInStudent(user: User) {
-    return await this.studentRepository.find({
+    const result = await this.studentRepository.find({
       where: { user },
       relations: ['class'],
     });
+    return result;
   }
 
   async deleteStudent(id, user: User) {
@@ -117,5 +132,23 @@ export class ClassService {
       throw new NotFoundException('수강 취소 실패');
     }
     return { success: true, message: '수강 취소 성공' };
+  }
+  async updateStudentState(Dto, studentid, classid, user) {
+    const { isOk } = Dto;
+    const classlist = await this.studentRepository.findOne({
+      id: classid,
+      user,
+    });
+    const studentlist = await this.studentRepository.findOne({
+      id: studentid,
+      class: classlist,
+    });
+    if (isOk == true) {
+      studentlist.state = 'accepted';
+    } else {
+      studentlist.state = 'rejected';
+    }
+    await this.studentRepository.save(studentlist);
+    return { success: true, message: '수강신청 처리성공' };
   }
 }

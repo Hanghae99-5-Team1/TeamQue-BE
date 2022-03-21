@@ -84,7 +84,12 @@ export class AuthController {
   @Get('/test')
   @UseGuards(JwtAuthGuard)
   test(@GetUser() user: User) {
-    console.log('user', user);
     return user;
+  }
+
+  @Post('/oneword')
+  @UseGuards(JwtAuthGuard)
+  changOneword(@GetUser() user: User, @Body() Dto) {
+    return this.authService.changOneword(user.id, Dto);
   }
 }

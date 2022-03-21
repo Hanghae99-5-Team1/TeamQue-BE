@@ -11,7 +11,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-import { BoardTypes } from './model/boardType.model';
 
 @Entity({ orderBy: { created_at: 'DESC', id: 'DESC' } })
 export class Board extends BaseEntity {
@@ -21,7 +20,7 @@ export class Board extends BaseEntity {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ type: 'text' })
   description: string;
 
   @Column()

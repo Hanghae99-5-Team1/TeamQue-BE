@@ -2,10 +2,15 @@ import { User } from 'src/auth/user.entity';
 import { EntityRepository, Repository } from 'typeorm';
 import { Board } from './board.entity';
 import { Comment } from './comment.entity';
+import { CreateCommnetDto } from './dto/creat-comment.dto';
 
 @EntityRepository(Comment)
 export class CommentRepository extends Repository<Comment> {
-  async createCommnet(Dto, user: User, board: Board): Promise<object> {
+  async createCommnet(
+    Dto: CreateCommnetDto,
+    user: User,
+    board: Board,
+  ): Promise<object> {
     const { description } = Dto;
     const comment = this.create({
       description,

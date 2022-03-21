@@ -1,10 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BoardRepository } from './board.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Board } from './board.entity';
 import { User } from 'src/auth/user.entity';
 import { CommentRepository } from './comment.repository';
-import { Comment } from './comment.entity';
 import { ClassService } from 'src/class/class.service';
 import { Todo } from './todo.entity';
 import { TodoRepository } from './todo.repository';
@@ -57,22 +55,22 @@ export class BoardsService {
       },
       take: 10,
     });
-    const questonPage = 20 - boardListNotice.length;
-    const skipPage = questonPage * (page - 1);
+    const questionPage = 20 - boardListNotice.length;
+    const skipPage = questionPage * (page - 1);
     const boardCountquestion = await this.boardRepository.count({
       where: {
         class: classList,
         boardType: 'Question',
       },
     });
-    const pages = boardCountquestion / questonPage + 1;
+    const pages = Math.ceil(boardCountquestion / questionPage);
     const boardListquestion = await this.boardRepository.find({
       where: {
         class: classList,
         boardType: 'Question',
       },
       skip: skipPage,
-      take: questonPage,
+      take: questionPage,
     });
 
     return { boardListNotice, boardListquestion, pages };
@@ -144,5 +142,16 @@ export class BoardsService {
       throw new NotFoundException('할일 삭제 실패');
     }
     return { success: true, message: '할일 삭제 성공' };
+  }
+
+  async changeOrderTodo(todoid1, todoid2, user) {
+    const todo1 = await this.todoRepository.findOne({ id: todoid1, user });
+    const todo2 = await this.todoRepository.findOne({ id: todoid2, user });
+    const order = todo1.order;
+    todo1.order = todo2.order;
+    todo2.order = order;
+    await this.todoRepository.save(todo1);
+    await this.todoRepository.save(todo2);
+    return { success: true, message: '할일 순서바꾸기 성공' };
   }
 }

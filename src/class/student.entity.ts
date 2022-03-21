@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { ClassList } from './class.entity';
 
-@Entity()
+@Entity({ orderBy: { state: 'ASC', id: 'ASC' } })
 export class Student extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,6 +20,9 @@ export class Student extends BaseEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column()
+  state: string;
 
   @Column({ nullable: true })
   userId: number;

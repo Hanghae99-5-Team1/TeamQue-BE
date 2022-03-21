@@ -21,11 +21,11 @@ export class Comment extends BaseEntity {
   @Column()
   writer: string;
 
-  // @Column({ nullable: true })
-  // userId: number;
+  @Column({ nullable: true })
+  userId: number;
 
-  // @Column({ nullable: true })
-  // boardId: number;
+  @Column({ nullable: true })
+  boardId: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

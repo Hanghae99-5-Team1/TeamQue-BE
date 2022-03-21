@@ -136,6 +136,12 @@ export class AuthService {
     await this.userRepository.update(id, { password: hashedPassword });
   }
 
+  async changOneword(id, Dto) {
+    const { oneword } = Dto;
+    await this.userRepository.update(id, { oneword });
+    return { success: true, message: '한줄 다짐 변경 성공' };
+  }
+
   async kakaoSignin(query) {
     const data = {
       code: query,
