@@ -22,7 +22,10 @@ export class ClassDate extends BaseEntity {
   day: number;
 
   @Column()
-  time: string;
+  startTime: string;
+
+  @Column()
+  endTime: string;
 
   @Column()
   weekday: number;

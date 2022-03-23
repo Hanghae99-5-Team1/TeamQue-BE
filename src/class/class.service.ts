@@ -5,6 +5,7 @@ import { ClassList } from './class.entity';
 import { ClassListRepository } from './class.repository';
 import { ClassDateRepository } from './classDate.repository';
 import { StudentRepository } from './student.repository';
+import * as uuid from 'uuid';
 
 @Injectable()
 export class ClassService {
@@ -25,22 +26,39 @@ export class ClassService {
     return await this.classlistRepository.find({ user });
   }
 
-  async getSelectedClass(id, user): Promise<object> {
-    return await this.classlistRepository.findOne({
-      where: { id, user },
-      relations: ['classdates'],
-    });
+  async getSelectedClass(Dto, id, user): Promise<object> {
+    const { year, month } = Dto;
+    return await this.classlistRepository
+      .createQueryBuilder('C')
+      .select([
+        'C.id',
+        'C.title',
+        'C.time',
+        'C.teacher',
+        'C.imageUrl',
+        'C.created_at',
+      ])
+      .leftJoinAndSelect('C.classdates', 'D')
+      .where('C.userid = :userid', { userid: user.id })
+      .andWhere('D.year = :year', { year })
+      .andWhere('D.month = :month', { month })
+      .andWhere('C.id = :id', { id })
+      .getMany();
   }
 
   async createClass(Dto, user: User): Promise<object> {
-    return await this.classlistRepository.createClass(Dto, user);
+    const unique = uuid.v4();
+    await this.classlistRepository.createClass(Dto, user, unique);
+    const classlist = await this.classlistRepository.findOne({ uuid: unique });
+    await this.classdateRepository.createClassDate(Dto, classlist);
+    return { success: true, message: '클레스 생성 성공' };
   }
 
   async updateClass(Dto, id, user): Promise<object> {
-    const { title, time } = Dto;
+    const { title, times } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
     classlist.title = title;
-    classlist.time = time;
+    classlist.time = times;
     await this.classlistRepository.save(classlist);
     return { success: true, message: '클레스 수정 성공' };
   }
@@ -59,13 +77,34 @@ export class ClassService {
     return classdate;
   }
 
+  async getAllClassDateByUser(user, Dto) {
+    const { year, month } = Dto;
+    return await this.studentRepository
+      .createQueryBuilder('S')
+      .select([
+        'S.classId',
+        'D.day',
+        'D.startTime',
+        'D.endTime',
+        'D.weekday',
+        'C.title',
+      ])
+      .leftJoin('S.class', 'C')
+      .leftJoin('C.classdates', 'D')
+      .where('S.userid = :userid', { userid: user.id })
+      .andWhere('D.year = :year', { year })
+      .andWhere('D.month = :month', { month })
+      .orderBy('D.day', 'ASC')
+      .getMany();
+  }
+
   async createClassDate(Dto, id, user: User) {
     const classlist = await this.classlistRepository.findOne({ id, user });
     return this.classdateRepository.createClassDate(Dto, classlist);
   }
 
   async updateClassDate(Dto, classid, classdateid, user) {
-    const { year, month, day, time } = Dto;
+    const { year, month, day, startTime, endTime } = Dto;
     const classlist = await this.classlistRepository.findOne({
       id: classid,
       user,
@@ -77,7 +116,8 @@ export class ClassService {
     classdate.year = year;
     classdate.month = month;
     classdate.day = day;
-    classdate.time = time;
+    classdate.startTime = startTime;
+    classdate.endTime = endTime;
     await this.classdateRepository.save(classdate);
     return { success: true, message: '클레스 달력 수정 성공' };
   }
@@ -119,11 +159,13 @@ export class ClassService {
   }
 
   async getClassInStudent(user: User) {
-    const result = await this.studentRepository.find({
-      where: { user },
-      relations: ['class'],
-    });
-    return result;
+    return await this.studentRepository
+      .createQueryBuilder('S')
+      .select(['S.state', 'C.id', 'C.title', 'C.teacher', 'C.time'])
+      .leftJoin('S.class', 'C')
+      .where('S.userid = :userid', { userid: user.id })
+      .orderBy('S.state', 'ASC')
+      .getManyAndCount();
   }
 
   async deleteStudent(id, user: User) {

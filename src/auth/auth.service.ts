@@ -43,7 +43,7 @@ export class AuthService {
     if (Dto.password !== Dto.confirmPassword) {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
-    const signupVerifyToken = uuid.v1();
+    const signupVerifyToken = uuid.v4();
     await this.sendMemberJoinEmail(Dto.userEmail, signupVerifyToken);
 
     this.userRepository.createUser(

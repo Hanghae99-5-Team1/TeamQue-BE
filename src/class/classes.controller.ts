@@ -20,6 +20,11 @@ import { CreateClassDto } from './dto/create-class.dto';
 export class ClassController {
   constructor(private classService: ClassService) {}
 
+  @Get('/date/all')
+  getClassDate(@GetUser() user: User, @Body() Dto) {
+    return this.classService.getAllClassDateByUser(user, Dto);
+  }
+
   @Get('/date/:classid')
   getclassdate(@Param('classid') id: number) {
     return this.classService.getClassDate(id);
@@ -104,8 +109,9 @@ export class ClassController {
   getSelectedClass(
     @GetUser() user: User,
     @Param('classid') id: number,
+    @Body() Dto,
   ): Promise<object> {
-    return this.classService.getSelectedClass(id, user);
+    return this.classService.getSelectedClass(Dto, id, user);
   }
 
   @Put('/:classid')

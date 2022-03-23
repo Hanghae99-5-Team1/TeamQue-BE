@@ -38,8 +38,8 @@ export class Board extends BaseEntity {
   @Column({ nullable: true })
   userId: number;
 
-  // @Column({ nullable: true })
-  // classId: number;
+  @Column({ nullable: true })
+  classId: number;
 
   @OneToMany((type) => Comment, (comment) => comment.board, { lazy: true })
   comments: Comment[];

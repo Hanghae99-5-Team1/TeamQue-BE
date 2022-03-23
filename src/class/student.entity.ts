@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { ClassList } from './class.entity';
 
-@Entity({ orderBy: { state: 'ASC', id: 'ASC' } })
+@Entity()
 export class Student extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -35,7 +35,6 @@ export class Student extends BaseEntity {
 
   @ManyToOne((type) => ClassList, (classlist) => classlist.students, {
     onDelete: 'CASCADE',
-    lazy: true,
   })
   class: ClassList;
 

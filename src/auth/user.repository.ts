@@ -27,7 +27,6 @@ export class UserRepository extends Repository<User> {
       password: hashedPassword,
       currentHashedRefreshToken: VerifyToken,
     });
-    console.log(user);
     try {
       await this.save(user);
       const theUser = this.findOne({ username, userEmail });

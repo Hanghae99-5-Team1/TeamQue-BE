@@ -25,10 +25,6 @@ import { Todo } from './todo.entity';
 export class BoardsController {
   constructor(private boardsService: BoardsService) {}
 
-  // @Get('/')
-  // getAllBoard(@GetUser() user: User): Promise<Board[]> {
-  //   return this.boardsService.getAllBoards(user);
-  // }
   @Post('/todo')
   createTodo(@Body() Dto: CreateTodoDto, @GetUser() user: User) {
     return this.boardsService.createTodo(Dto, user);

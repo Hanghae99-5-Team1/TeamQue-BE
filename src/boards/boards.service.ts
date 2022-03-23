@@ -6,6 +6,7 @@ import { CommentRepository } from './comment.repository';
 import { ClassService } from 'src/class/class.service';
 import { Todo } from './todo.entity';
 import { TodoRepository } from './todo.repository';
+import { count } from 'console';
 
 @Injectable()
 export class BoardsService {
@@ -36,8 +37,13 @@ export class BoardsService {
   }
 
   async getBoardSelested(user: User, id: number): Promise<object> {
-    const board = await this.boardRepository.findOne({ id });
-    await board.comments;
+    const board = await this.boardRepository
+      .createQueryBuilder('B')
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .where('B.id = :id', { id })
+      .leftJoinAndSelect('B.comments', 'C')
+      .getOne();
+
     let isByMe = false;
     if (board.userId === user.id) {
       isByMe = true;
@@ -48,13 +54,17 @@ export class BoardsService {
   async getBoardByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
 
-    const boardListNotice = await this.boardRepository.find({
-      where: {
-        class: classList,
-        boardType: 'Notice',
-      },
-      take: 10,
-    });
+    const boardListNotice = await this.boardRepository
+      .createQueryBuilder('B')
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .where('B.classid = :classid', { classid: classList.id })
+      .andWhere('B.boardType = :boardType', { boardType: 'Notice' })
+      .take(10)
+      .getMany();
+
+    // .addSelect('COUNT(*) AS C')
+    // .leftJoin('B.comments', 'C')
+
     const questionPage = 20 - boardListNotice.length;
     const skipPage = questionPage * (page - 1);
     const boardCountquestion = await this.boardRepository.count({
@@ -64,14 +74,14 @@ export class BoardsService {
       },
     });
     const pages = Math.ceil(boardCountquestion / questionPage);
-    const boardListquestion = await this.boardRepository.find({
-      where: {
-        class: classList,
-        boardType: 'Question',
-      },
-      skip: skipPage,
-      take: questionPage,
-    });
+    const boardListquestion = await this.boardRepository
+      .createQueryBuilder('B')
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .where('B.classid = :classid', { classid: classList.id })
+      .andWhere('B.boardType = :boardType', { boardType: 'Question' })
+      .skip(skipPage)
+      .take(questionPage)
+      .getMany();
 
     return { boardListNotice, boardListquestion, pages };
   }
