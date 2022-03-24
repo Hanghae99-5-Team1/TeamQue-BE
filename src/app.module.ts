@@ -5,6 +5,7 @@ import { BoardsModule } from './boards/boards.module';
 import { typeORMConfig } from './configs/typeorm.config';
 import { AuthModule } from './auth/auth.module';
 import { ClassModule } from './class/classes.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ClassModule } from './class/classes.module';
     BoardsModule,
     AuthModule,
     ClassModule,
+    ChatModule,
   ],
 })
 export class AppModule {
