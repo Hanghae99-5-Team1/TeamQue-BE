@@ -10,7 +10,7 @@ import * as bcrypt from 'bcryptjs';
 export class UserRepository extends Repository<User> {
   async createUser(
     userEmail,
-    username,
+    userName,
     provider?: string,
     password?: string,
     VerifyToken?: string,
@@ -21,15 +21,15 @@ export class UserRepository extends Repository<User> {
       hashedPassword = await bcrypt.hash(password, salt);
     }
     const user = this.create({
-      username,
       userEmail,
+      userName,
       provider,
       password: hashedPassword,
       currentHashedRefreshToken: VerifyToken,
     });
     try {
       await this.save(user);
-      const theUser = this.findOne({ username, userEmail });
+      const theUser = this.findOne({ userName, userEmail });
       return theUser['id'];
     } catch (error) {
       console.log(error);

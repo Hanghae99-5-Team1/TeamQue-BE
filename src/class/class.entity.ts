@@ -28,7 +28,7 @@ export class ClassList extends BaseEntity {
   teacher: string;
 
   @Column({ type: 'text', nullable: true })
-  imageUrl?: string;
+  imageUrl: string;
 
   @Column()
   uuid: string;
@@ -36,10 +36,10 @@ export class ClassList extends BaseEntity {
   @Column({ nullable: true })
   userId: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
   @OneToMany((type) => Student, (student) => student.class)

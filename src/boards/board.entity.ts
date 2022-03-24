@@ -12,7 +12,7 @@ import {
 } from 'typeorm';
 import { Comment } from './comment.entity';
 
-@Entity({ orderBy: { created_at: 'DESC', id: 'DESC' } })
+@Entity({ orderBy: { createdAt: 'DESC', id: 'DESC' } })
 export class Board extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,10 +29,10 @@ export class Board extends BaseEntity {
   @Column()
   boardType: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
   @Column({ nullable: true })

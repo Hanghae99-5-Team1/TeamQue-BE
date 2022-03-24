@@ -26,8 +26,8 @@ export class ClassService {
     return await this.classlistRepository.find({ user });
   }
 
-  async getSelectedClass(Dto, id, user): Promise<object> {
-    const { year, month } = Dto;
+  async getSelectedClass(Dto, id): Promise<object> {
+    // const { year, month } = Dto;
     return await this.classlistRepository
       .createQueryBuilder('C')
       .select([
@@ -36,14 +36,11 @@ export class ClassService {
         'C.time',
         'C.teacher',
         'C.imageUrl',
-        'C.created_at',
+        'C.createdAt',
       ])
       .leftJoinAndSelect('C.classdates', 'D')
-      .where('C.userid = :userid', { userid: user.id })
-      .andWhere('D.year = :year', { year })
-      .andWhere('D.month = :month', { month })
-      .andWhere('C.id = :id', { id })
-      .getMany();
+      .where('C.id = :id', { id })
+      .getOne();
   }
 
   async createClass(Dto, user: User): Promise<object> {
@@ -55,10 +52,12 @@ export class ClassService {
   }
 
   async updateClass(Dto, id, user): Promise<object> {
-    const { title, times } = Dto;
+    const { title, imageUrl } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
     classlist.title = title;
-    classlist.time = times;
+    if (imageUrl) {
+      classlist.imageUrl = imageUrl;
+    }
     await this.classlistRepository.save(classlist);
     return { success: true, message: '클레스 수정 성공' };
   }
@@ -99,7 +98,15 @@ export class ClassService {
   }
 
   async createClassDate(Dto, id, user: User) {
+    const { times } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
+    let time = '';
+    const days = ['월', '화', '수', '목', '금', '토', '일'];
+    for (const weekday of times) {
+      const { day, startTime, endTime } = weekday;
+      time += `${days[day - 1]} ${startTime}~${endTime}/`;
+    }
+    classlist.time = time;
     return this.classdateRepository.createClassDate(Dto, classlist);
   }
 
@@ -161,11 +168,18 @@ export class ClassService {
   async getClassInStudent(user: User) {
     return await this.studentRepository
       .createQueryBuilder('S')
-      .select(['S.state', 'C.id', 'C.title', 'C.teacher', 'C.time'])
+      .select([
+        'S.state',
+        'C.id',
+        'C.title',
+        'C.teacher',
+        'C.time',
+        'C.imageUrl',
+      ])
       .leftJoin('S.class', 'C')
       .where('S.userid = :userid', { userid: user.id })
       .orderBy('S.state', 'ASC')
-      .getManyAndCount();
+      .getMany();
   }
 
   async deleteStudent(id, user: User) {

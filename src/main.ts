@@ -1,11 +1,19 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as config from 'config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  //cors 처리
   app.enableCors();
+  //유효성 검사
+  app.useGlobalPipes(
+    new ValidationPipe({
+      // whitelist:true;,
+      transform: true,
+    }),
+  );
 
   const serverConfig = config.get('server');
   const port = serverConfig.port;

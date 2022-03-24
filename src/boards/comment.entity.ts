@@ -27,10 +27,10 @@ export class Comment extends BaseEntity {
   @Column({ nullable: true })
   boardId: number;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
   @ManyToOne((type) => User, (user) => user.comments, { onDelete: 'CASCADE' })

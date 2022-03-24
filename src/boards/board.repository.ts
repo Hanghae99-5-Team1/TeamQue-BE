@@ -10,7 +10,7 @@ export class BoardRepository extends Repository<Board> {
       title,
       description,
       user,
-      writer: user.username,
+      writer: user.userName,
       boardType,
       class: classList,
     });

@@ -39,7 +39,14 @@ export class BoardsService {
   async getBoardSelested(user: User, id: number): Promise<object> {
     const board = await this.boardRepository
       .createQueryBuilder('B')
-      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .select([
+        'B.id',
+        'B.title',
+        'B.writer',
+        'B.boardType',
+        'B.createdAt',
+        'B.description',
+      ])
       .where('B.id = :id', { id })
       .leftJoinAndSelect('B.comments', 'C')
       .getOne();
@@ -56,7 +63,7 @@ export class BoardsService {
 
     const boardListNotice = await this.boardRepository
       .createQueryBuilder('B')
-      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
       .where('B.classid = :classid', { classid: classList.id })
       .andWhere('B.boardType = :boardType', { boardType: 'Notice' })
       .take(10)
@@ -64,7 +71,9 @@ export class BoardsService {
 
     // .addSelect('COUNT(*) AS C')
     // .leftJoin('B.comments', 'C')
-
+    if (!page) {
+      page = 1;
+    }
     const questionPage = 20 - boardListNotice.length;
     const skipPage = questionPage * (page - 1);
     const boardCountquestion = await this.boardRepository.count({
@@ -76,7 +85,7 @@ export class BoardsService {
     const pages = Math.ceil(boardCountquestion / questionPage);
     const boardListquestion = await this.boardRepository
       .createQueryBuilder('B')
-      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.created_at'])
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
       .where('B.classid = :classid', { classid: classList.id })
       .andWhere('B.boardType = :boardType', { boardType: 'Question' })
       .skip(skipPage)

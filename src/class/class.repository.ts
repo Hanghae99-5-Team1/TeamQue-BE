@@ -20,7 +20,7 @@ export class ClassListRepository extends Repository<ClassList> {
       user,
       title,
       time,
-      teacher: user.username,
+      teacher: user.userName,
       imageUrl,
       uuid: unique,
     });

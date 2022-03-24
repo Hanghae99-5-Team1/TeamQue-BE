@@ -92,7 +92,7 @@ export class AuthService {
       return {
         accessToken,
         refreshToken,
-        nickname: user.username,
+        nickname: user.userName,
         success: true,
         message: '로그인성공',
       };
@@ -123,8 +123,8 @@ export class AuthService {
     return refreshToken;
   }
 
-  async modifyUsername(username: string, id) {
-    await this.userRepository.update(id, { username });
+  async modifyUsername(userName: string, id) {
+    await this.userRepository.update(id, { userName });
   }
 
   async modifyPassword(Dto, id) {
@@ -176,7 +176,7 @@ export class AuthService {
     const userdata = response2.data;
     // const userEmail = 'whtkdgusdldi@naver.com';
     const userEmail = userdata.kakao_account.email;
-    const username = userdata.properties.nickname;
+    const userName = userdata.properties.nickname;
     const user = await this.userRepository.findOne({
       userEmail,
     });
@@ -188,13 +188,13 @@ export class AuthService {
         success: true,
         accessToken,
         refreshToken,
-        nickname: user['username'],
+        nickname: user['userName'],
         message: '카카오 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
         userEmail,
-        username,
+        userName,
         'kakao',
       );
       this.userService.CurrnetRefreshToken(refreshToken, newUser);

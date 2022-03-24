@@ -16,7 +16,7 @@ export class CommentRepository extends Repository<Comment> {
       description,
       user,
       board,
-      writer: user.username,
+      writer: user.userName,
     });
     await this.save(comment);
     return { success: true, message: '댓글작성성공' };

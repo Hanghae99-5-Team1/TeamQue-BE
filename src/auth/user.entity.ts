@@ -22,7 +22,7 @@ export class User extends BaseEntity {
   id: number;
 
   @Column()
-  username: string;
+  userName: string;
 
   @Column({ nullable: true, default: null })
   password: string;
@@ -40,10 +40,10 @@ export class User extends BaseEntity {
   @Exclude()
   currentHashedRefreshToken?: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 
   @OneToMany((type) => Board, (board) => board.user)
