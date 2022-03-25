@@ -78,18 +78,11 @@ export class ClassService {
 
   async getAllClassDateByUser(user, Dto) {
     const { year, month } = Dto;
-    return await this.studentRepository
-      .createQueryBuilder('S')
-      .select([
-        'S.classId',
-        'D.day',
-        'D.startTime',
-        'D.endTime',
-        'D.weekday',
-        'C.title',
-      ])
-      .leftJoin('S.class', 'C')
-      .leftJoin('C.classdates', 'D')
+    return await this.classdateRepository
+      .createQueryBuilder('D')
+      .select(['D.day', 'D.startTime', 'D.endTime', 'D.weekday', 'C.title'])
+      .leftJoin('D.class', 'C')
+      .leftJoin('C.students', 'S')
       .where('S.userid = :userid', { userid: user.id })
       .andWhere('D.year = :year', { year })
       .andWhere('D.month = :month', { month })

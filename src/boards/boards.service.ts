@@ -6,7 +6,6 @@ import { CommentRepository } from './comment.repository';
 import { ClassService } from 'src/class/class.service';
 import { Todo } from './todo.entity';
 import { TodoRepository } from './todo.repository';
-import { count } from 'console';
 
 @Injectable()
 export class BoardsService {

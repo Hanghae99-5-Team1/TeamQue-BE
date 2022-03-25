@@ -25,6 +25,7 @@ import { UpdateDateDto } from './dto/update-date.dto';
 export class ClassController {
   constructor(private classService: ClassService) {}
   //내가 듣는 수업 날짜만 가져오기
+  //쿼리 교체
   @Get('/date/all')
   getClassDate(@GetUser() user: User, @Body() Dto: GetAllDateByMonthDto) {
     return this.classService.getAllClassDateByUser(user, Dto);
@@ -73,7 +74,6 @@ export class ClassController {
     return this.classService.createStudent(id, user);
   }
   //내가듣는 수업 가져오기
-  // 쿼리 바꾸기
   @Get('/student/class')
   getClassInStudent(@GetUser() user: User) {
     return this.classService.getClassInStudent(user);
