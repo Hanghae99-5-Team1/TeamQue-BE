@@ -12,18 +12,21 @@ import { Inject, Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ChatService } from './chat.service';
 
-const enum chatType {
-  common = 1,
-  question = 2,
-}
+const chatType = {
+  common: 1,
+  question: 2,
+} as const;
 
-const enum userState {
-  disconnect = 1,
-  connect,
-  correct,
-  incorrect,
-  question,
-}
+const userState = {
+  disconnect: 1,
+  connect: 2,
+  correct: 3,
+  incorrect: 4,
+  question: 5,
+} as const;
+
+type chatType = typeof chatType[keyof typeof chatType];
+type userState = typeof userState[keyof typeof userState];
 
 @WebSocketGateway({
   cors: {
@@ -69,6 +72,12 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<object> {
     const nickname = client.data.nickname;
 
+    if (classId === null || classId === undefined) {
+      Logger.debug(`${nickname} / joinRoom / 인자가 없습니다.`);
+      client.disconnect(true);
+      return;
+    }
+
     client.join(String(classId));
     client.broadcast
       .to(String(classId))
@@ -93,10 +102,10 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     // FE에게 보내줘야한다.
 
     const dummy = [
-      { nickname: '공정용', state: userState.connect },
-      { nickname: '김우현', state: userState.correct },
-      { nickname: '문성현', state: userState.question },
-      { nickname: '조상현', state: userState.incorrect },
+      { nickname: '공정용', state: userState.disconnect },
+      { nickname: '조상현부캐', state: userState.disconnect },
+      { nickname: '문성현', state: userState.disconnect },
+      { nickname: '조상현', state: userState.disconnect },
     ];
 
     return { nickname, userList: dummy, chatList, connectUsers };
@@ -137,8 +146,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       `sendChatMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
     );
 
-    if (nickname === undefined) {
+    if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
+      Logger.debug(`닉네임 설정이 안 돼있네요. 아니면 방에 들어가질 않았어요.`);
       return;
     }
 
@@ -174,8 +184,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       `sendQuestionMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
     );
 
-    if (nickname === undefined) {
+    if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
+      Logger.debug(`닉네임 설정이 안 돼있네요. 아니면 방에 들어가질 않았어요.`);
       return;
     }
 
