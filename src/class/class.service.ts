@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/auth/user.entity';
-import { ClassList } from './class.entity';
-import { ClassListRepository } from './class.repository';
-import { ClassDateRepository } from './classDate.repository';
-import { StudentRepository } from './student.repository';
+import { User } from 'src/entity/user.entity';
+import { ClassList } from '../entity/class.entity';
+import { ClassListRepository } from '../repository/class.repository';
+import { ClassDateRepository } from '../repository/classDate.repository';
+import { StudentRepository } from '../repository/student.repository';
 import * as uuid from 'uuid';
 
 @Injectable()

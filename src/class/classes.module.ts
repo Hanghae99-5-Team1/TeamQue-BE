@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth/auth.module';
 import { ClassController } from './classes.controller';
-import { ClassListRepository } from './class.repository';
+import { ClassListRepository } from '../repository/class.repository';
 import { ClassService } from './class.service';
-import { ClassDateRepository } from './classDate.repository';
-import { StudentRepository } from './student.repository';
+import { ClassDateRepository } from '../repository/classDate.repository';
+import { StudentRepository } from '../repository/student.repository';
 
 @Module({
   imports: [

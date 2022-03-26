@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import { BoardsService } from './boards.service';
 import { GetUser } from 'src/auth/get-user.decorator';
-import { User } from 'src/auth/user.entity';
+import { User } from 'src/entity/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CreateBoardDto } from './dto/creat-board.dto';
 import { CreateCommnetDto } from './dto/creat-comment.dto';
 import { CreateTodoDto } from './dto/creat-todo.dto';
-import { Todo } from './todo.entity';
+import { Todo } from '../entity/todo.entity';
 
 @Controller('boards')
 @UseGuards(JwtAuthGuard)

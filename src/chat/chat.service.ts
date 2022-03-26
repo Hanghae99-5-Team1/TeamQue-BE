@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChatLogRepository } from '../repository/ChatLog.repository';
-import { StudentRepository } from '../class/student.repository';
+import { StudentRepository } from '../repository/student.repository';
 import { ChatLog } from 'src/entity/ChatLog.entity';
-import { Student } from 'src/class/student.entity';
+import { Student } from 'src/entity/student.entity';
 
 @Injectable()
 export class ChatService {

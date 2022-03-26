@@ -4,13 +4,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BoardRepository } from './board.repository';
+import { BoardRepository } from '../repository/board.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/auth/user.entity';
-import { CommentRepository } from './comment.repository';
+import { User } from 'src/entity/user.entity';
+import { CommentRepository } from '../repository/comment.repository';
 import { ClassService } from 'src/class/class.service';
-import { Todo } from './todo.entity';
-import { TodoRepository } from './todo.repository';
+import { Todo } from '../entity/todo.entity';
+import { TodoRepository } from '../repository/todo.repository';
 import { Connection } from 'typeorm';
 import { BoardTypes } from './model/boardType.model';
 

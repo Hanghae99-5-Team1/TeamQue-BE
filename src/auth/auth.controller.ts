@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { GetUser } from './get-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { User } from './user.entity';
+import { User } from '../entity/user.entity';
 import { RefreshService } from './refresh.service';
 import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import { ModifyUserDto } from './dto/modify-user.dto';

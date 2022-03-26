@@ -12,8 +12,6 @@ async function bootstrap() {
     ),
   };
   const app = await NestFactory.create(AppModule, { httpsOptions });
-  //cors 처리
-  app.enableCors();
   //유효성 검사
   app.useGlobalPipes(
     new ValidationPipe({
@@ -21,12 +19,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.enableCors({
-    origin: [],
-    credentials: true,
-    methods: ['GET', 'PUT', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  app.enableCors();
 
   const serverConfig = config.get('server');
   const port = serverConfig.port;

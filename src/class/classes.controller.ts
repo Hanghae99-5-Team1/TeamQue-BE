@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { User } from 'src/auth/user.entity';
-import { ClassList } from './class.entity';
+import { User } from 'src/entity/user.entity';
+import { ClassList } from '../entity/class.entity';
 import { ClassService } from './class.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { CreateDateDto } from './dto/create-date.dto';
