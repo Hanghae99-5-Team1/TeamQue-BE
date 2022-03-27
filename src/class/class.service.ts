@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/auth/user.entity';
-import { ClassList } from './class.entity';
-import { ClassListRepository } from './class.repository';
-import { ClassDateRepository } from './classDate.repository';
-import { StudentRepository } from './student.repository';
+import { User } from 'src/entity/user.entity';
+import { ClassList } from '../entity/class.entity';
+import { ClassListRepository } from '../repository/class.repository';
+import { ClassDateRepository } from '../repository/classDate.repository';
+import { StudentRepository } from '../repository/student.repository';
 import * as uuid from 'uuid';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class ClassService {
@@ -22,8 +23,35 @@ export class ClassService {
     return await this.classlistRepository.findOne({ id });
   }
 
-  async getClass(user: User): Promise<ClassList[]> {
-    return await this.classlistRepository.find({ user });
+  async getClass(user: User): Promise<object> {
+    const classlist = await this.classlistRepository
+      .createQueryBuilder('C')
+      .select([
+        'C.id',
+        'C.title',
+        'C.time',
+        'C.teacher',
+        'C.imageUrl',
+        'C.startDate',
+        'C.endDate',
+      ])
+      .where('C.userid = :userid', { userid: user.id })
+      .getMany();
+    const mappingClasslist = classlist.map((data) => ({
+      id: data.id,
+      title: data.title,
+      time: data.time.split('/').slice(0, -1),
+      teacher: data.teacher,
+      imageUrl: data.imageUrl,
+      state: 'teach',
+      progress:
+        DateTime.fromISO(data.startDate) > DateTime.now()
+          ? '시작전'
+          : DateTime.fromISO(data.endDate) > DateTime.now()
+          ? '진행중'
+          : '종료',
+    }));
+    return mappingClasslist;
   }
 
   async getSelectedClass(Dto, id): Promise<object> {
@@ -76,11 +104,10 @@ export class ClassService {
     return classdate;
   }
 
-  async getAllClassDateByUser(user, Dto) {
-    const { year, month } = Dto;
-    return await this.classdateRepository
+  async getAllClassDateByUser(user, year, month) {
+    const Alldate = await this.classdateRepository
       .createQueryBuilder('D')
-      .select(['D.day', 'D.startTime', 'D.endTime', 'D.weekday', 'C.title'])
+      .select(['D.day', 'D.startTime', 'D.endTime', 'C.title'])
       .leftJoin('D.class', 'C')
       .leftJoin('C.students', 'S')
       .where('S.userid = :userid', { userid: user.id })
@@ -88,10 +115,17 @@ export class ClassService {
       .andWhere('D.month = :month', { month })
       .orderBy('D.day', 'ASC')
       .getMany();
+    const mappingAlldate = Alldate.map((data) => ({
+      day: data.day,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      title: data.class.title,
+    }));
+    return mappingAlldate;
   }
 
   async createClassDate(Dto, id, user: User) {
-    const { times } = Dto;
+    const { times, startDate, endDate } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
     let time = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
@@ -99,6 +133,8 @@ export class ClassService {
       const { day, startTime, endTime } = weekday;
       time += `${days[day - 1]} ${startTime}~${endTime}/`;
     }
+    classlist.startDate = startDate;
+    classlist.endDate = endDate;
     classlist.time = time;
     return this.classdateRepository.createClassDate(Dto, classlist);
   }
@@ -159,20 +195,37 @@ export class ClassService {
   }
 
   async getClassInStudent(user: User) {
-    return await this.studentRepository
-      .createQueryBuilder('S')
+    const student = await this.classlistRepository
+      .createQueryBuilder('C')
       .select([
-        'S.state',
         'C.id',
         'C.title',
         'C.teacher',
         'C.time',
         'C.imageUrl',
+        'S.state',
+        'C.startDate',
+        'C.endDate',
       ])
-      .leftJoin('S.class', 'C')
+      .leftJoin('C.students', 'S')
       .where('S.userid = :userid', { userid: user.id })
       .orderBy('S.state', 'ASC')
       .getMany();
+    const mappingStudent = student.map((data) => ({
+      id: data.id,
+      title: data.title,
+      teacher: data.teacher,
+      time: data.time.split('/').slice(0, -1),
+      imageUrl: data.imageUrl,
+      state: data.students[0].state,
+      progress:
+        DateTime.fromISO(data.startDate) > DateTime.now()
+          ? '시작전'
+          : DateTime.fromISO(data.endDate) > DateTime.now()
+          ? '진행중'
+          : '종료',
+    }));
+    return mappingStudent;
   }
 
   async deleteStudent(id, user: User) {

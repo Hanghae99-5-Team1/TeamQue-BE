@@ -26,9 +26,13 @@ export class ClassController {
   constructor(private classService: ClassService) {}
   //내가 듣는 수업 날짜만 가져오기
   //쿼리 교체
-  @Get('/date/all')
-  getClassDate(@GetUser() user: User, @Body() Dto: GetAllDateByMonthDto) {
-    return this.classService.getAllClassDateByUser(user, Dto);
+  @Get('/date/all/:year/:month')
+  getClassDate(
+    @GetUser() user: User,
+    @Param('year') year: number,
+    @Param('month') month: number,
+  ) {
+    return this.classService.getAllClassDateByUser(user, year, month);
   }
   //지정클레스의 수업날짜 가져오기
   @Get('/date/:classid')
@@ -108,7 +112,7 @@ export class ClassController {
   }
   //내가하는 수업정보 가져오기
   @Get('/')
-  getClass(@GetUser() user: User): Promise<ClassList[]> {
+  getClass(@GetUser() user: User): Promise<object> {
     return this.classService.getClass(user);
   }
   //지정 클레스 정보 가져오기
