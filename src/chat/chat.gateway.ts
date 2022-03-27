@@ -135,14 +135,14 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: {
       classId: number;
-      chatMessage: string;
+      message: string;
     },
   ): object {
     const nickname = client.data.nickname;
-    const { classId, chatMessage } = data;
+    const { classId, message } = data;
     const id = uuid();
 
-    Logger.debug(`sendChat / (room: ${classId}) ${nickname} : ${chatMessage}`);
+    Logger.debug(`sendChat / (room: ${classId}) ${nickname} : ${message}`);
 
     if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
@@ -153,15 +153,15 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     this.chatService.saveChat(
       classId,
       nickname,
-      chatMessage,
+      message,
       id,
       chatType.common,
     );
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveChat', { id, chatMessage, nickname });
-    return { id, chatMessage };
+      .emit('receiveChat', { id, message, nickname });
+    return { id, message };
   }
 
   @SubscribeMessage('sendQuestion')
@@ -171,15 +171,15 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: {
       classId: number;
-      chatMessage: string;
+      message: string;
     },
   ): object {
     const nickname = client.data.nickname;
-    const { classId, chatMessage } = data;
+    const { classId, message } = data;
     const id = uuid();
 
     Logger.debug(
-      `sendQuestion / (room: ${classId}) ${nickname} : ${chatMessage}`,
+      `sendQuestion / (room: ${classId}) ${nickname} : ${message}`,
     );
 
     if (nickname === undefined || classId === undefined) {
@@ -191,18 +191,18 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     this.chatService.saveChat(
       classId,
       nickname,
-      chatMessage,
+      message,
       id,
       chatType.question,
     );
 
     client.broadcast.to(String(classId)).emit('receiveQuestion', {
       id,
-      chatMessage,
+      message,
       nickname,
     });
 
-    return { id, chatMessage };
+    return { id, message };
   }
 
   @SubscribeMessage('sendResolved')

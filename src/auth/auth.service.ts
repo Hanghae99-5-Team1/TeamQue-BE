@@ -7,7 +7,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+<<<<<<< HEAD
 import { UserRepository } from './user.repository';
+=======
+import { UserRepository } from '../repository/user.repository';
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import axios, { AxiosRequestConfig } from 'axios';
@@ -43,7 +47,11 @@ export class AuthService {
     if (Dto.password !== Dto.confirmPassword) {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
+<<<<<<< HEAD
     const signupVerifyToken = uuid.v1();
+=======
+    const signupVerifyToken = uuid.v4();
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
     await this.sendMemberJoinEmail(Dto.userEmail, signupVerifyToken);
 
     this.userRepository.createUser(
@@ -92,7 +100,11 @@ export class AuthService {
       return {
         accessToken,
         refreshToken,
+<<<<<<< HEAD
         nickname: user.username,
+=======
+        nickname: user.userName,
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
         success: true,
         message: '로그인성공',
       };
@@ -123,8 +135,13 @@ export class AuthService {
     return refreshToken;
   }
 
+<<<<<<< HEAD
   async modifyUsername(username: string, id) {
     await this.userRepository.update(id, { username });
+=======
+  async modifyUsername(userName: string, id) {
+    await this.userRepository.update(id, { userName });
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
   }
 
   async modifyPassword(Dto, id) {
@@ -136,6 +153,15 @@ export class AuthService {
     await this.userRepository.update(id, { password: hashedPassword });
   }
 
+<<<<<<< HEAD
+=======
+  async changOneword(id, Dto) {
+    const { oneword } = Dto;
+    await this.userRepository.update(id, { oneword });
+    return { success: true, message: '한줄 다짐 변경 성공' };
+  }
+
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
   async kakaoSignin(query) {
     const data = {
       code: query,
@@ -170,7 +196,11 @@ export class AuthService {
     const userdata = response2.data;
     // const userEmail = 'whtkdgusdldi@naver.com';
     const userEmail = userdata.kakao_account.email;
+<<<<<<< HEAD
     const username = userdata.properties.nickname;
+=======
+    const userName = userdata.properties.nickname;
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
     const user = await this.userRepository.findOne({
       userEmail,
     });
@@ -182,13 +212,21 @@ export class AuthService {
         success: true,
         accessToken,
         refreshToken,
+<<<<<<< HEAD
         nickname: user['username'],
+=======
+        nickname: user['userName'],
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
         message: '카카오 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
         userEmail,
+<<<<<<< HEAD
         username,
+=======
+        userName,
+>>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
         'kakao',
       );
       this.userService.CurrnetRefreshToken(refreshToken, newUser);

@@ -1,5 +1,5 @@
-import { User } from 'src/auth/user.entity';
-import { Board } from 'src/boards/board.entity';
+import { User } from 'src/entity/user.entity';
+import { Board } from 'src/entity/board.entity';
 import {
   BaseEntity,
   Column,
@@ -26,6 +26,12 @@ export class ClassList extends BaseEntity {
 
   @Column()
   teacher: string;
+
+  @Column()
+  startDate: string;
+
+  @Column()
+  endDate: string;
 
   @Column({ type: 'text', nullable: true })
   imageUrl: string;

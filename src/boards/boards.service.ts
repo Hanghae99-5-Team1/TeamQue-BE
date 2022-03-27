@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { BoardRepository } from './board.repository';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { BoardRepository } from '../repository/board.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Board } from './board.entity';
-import { User } from 'src/auth/user.entity';
-import { CommentRepository } from './comment.repository';
-import { Comment } from './comment.entity';
+import { User } from 'src/entity/user.entity';
+import { CommentRepository } from '../repository/comment.repository';
 import { ClassService } from 'src/class/class.service';
-import { Todo } from './todo.entity';
-import { TodoRepository } from './todo.repository';
+import { Todo } from '../entity/todo.entity';
+import { TodoRepository } from '../repository/todo.repository';
+import { Connection } from 'typeorm';
+import { BoardTypes } from './model/boardType.model';
 
 @Injectable()
 export class BoardsService {
@@ -19,18 +24,8 @@ export class BoardsService {
     private commentRepository: CommentRepository,
     @InjectRepository(TodoRepository)
     private todoRepository: TodoRepository,
+    private connection: Connection,
   ) {}
-
-  // async getAllBoards(user: User): Promise<Board[]> {
-  // const query = this.boardRepository.createQueryBuilder('board');
-
-  // query.where('board.userId = :userId', { userId: user.id });
-
-  // const boards = await query.getMany();
-  // return boards;
-  //   console.log(user['username']);
-  //   return this.boardRepository.find();
-  // }
 
   async createBoard(Dto, user: User, id): Promise<object> {
     const classList = await this.classService.findClassById(id);
@@ -38,8 +33,20 @@ export class BoardsService {
   }
 
   async getBoardSelested(user: User, id: number): Promise<object> {
-    const board = await this.boardRepository.findOne({ id });
-    await board.comments;
+    const board = await this.boardRepository
+      .createQueryBuilder('B')
+      .select([
+        'B.id',
+        'B.title',
+        'B.writer',
+        'B.boardType',
+        'B.createdAt',
+        'B.description',
+      ])
+      .where('B.id = :id', { id })
+      .leftJoinAndSelect('B.comments', 'C')
+      .getOne();
+
     let isByMe = false;
     if (board.userId === user.id) {
       isByMe = true;
@@ -50,30 +57,36 @@ export class BoardsService {
   async getBoardByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
 
-    const boardListNotice = await this.boardRepository.find({
-      where: {
-        class: classList,
-        boardType: 'Notice',
-      },
-      take: 10,
-    });
-    const questonPage = 20 - boardListNotice.length;
-    const skipPage = questonPage * (page - 1);
+    const boardListNotice = await this.boardRepository
+      .createQueryBuilder('B')
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
+      .where('B.classid = :classid', { classid: classList.id })
+      .andWhere('B.boardType = :boardType', { boardType: 'Notice' })
+      .take(10)
+      .getMany();
+
+    // .addSelect('COUNT(*) AS C')
+    // .leftJoin('B.comments', 'C')
+    if (!page) {
+      page = 1;
+    }
+    const questionPage = 20 - boardListNotice.length;
+    const skipPage = questionPage * (page - 1);
     const boardCountquestion = await this.boardRepository.count({
       where: {
         class: classList,
         boardType: 'Question',
       },
     });
-    const pages = boardCountquestion / questonPage + 1;
-    const boardListquestion = await this.boardRepository.find({
-      where: {
-        class: classList,
-        boardType: 'Question',
-      },
-      skip: skipPage,
-      take: questonPage,
-    });
+    const pages = Math.ceil(boardCountquestion / questionPage);
+    const boardListquestion = await this.boardRepository
+      .createQueryBuilder('B')
+      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
+      .where('B.classid = :classid', { classid: classList.id })
+      .andWhere('B.boardType = :boardType', { boardType: 'Question' })
+      .skip(skipPage)
+      .take(questionPage)
+      .getMany();
 
     return { boardListNotice, boardListquestion, pages };
   }
@@ -88,6 +101,9 @@ export class BoardsService {
 
   async updateBoard(Dto, user: User, id: number): Promise<object> {
     const { title, description, boardType } = Dto;
+    if (!(boardType in BoardTypes)) {
+      throw new BadRequestException('보드타입을 확인해주세요');
+    }
     const board = await this.boardRepository.findOne({ id, user });
     board.title = title;
     board.description = description;
@@ -144,5 +160,26 @@ export class BoardsService {
       throw new NotFoundException('할일 삭제 실패');
     }
     return { success: true, message: '할일 삭제 성공' };
+  }
+
+  async changeOrderTodo(todoid1, todoid2, user) {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const todo1 = await this.todoRepository.findOne({ id: todoid1, user });
+      const todo2 = await this.todoRepository.findOne({ id: todoid2, user });
+      const order = todo1.order;
+      todo1.order = todo2.order;
+      todo2.order = order;
+      await this.todoRepository.save(todo1);
+      await this.todoRepository.save(todo2);
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw new ConflictException({ message: '수정실패 다시시도해주세요' });
+    } finally {
+      await queryRunner.release();
+      return { success: true, message: '할일 순서바꾸기 성공' };
+    }
   }
 }
