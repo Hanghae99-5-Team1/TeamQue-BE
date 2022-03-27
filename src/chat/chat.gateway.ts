@@ -128,7 +128,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     return {};
   }
 
-  @SubscribeMessage('sendChatMessage')
+  @SubscribeMessage('sendChat')
   handleChatMessage(
     @ConnectedSocket()
     client: Socket,
@@ -142,9 +142,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     const { classId, chatMessage } = data;
     const id = uuid();
 
-    Logger.debug(
-      `sendChatMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
-    );
+    Logger.debug(`sendChat / (room: ${classId}) ${nickname} : ${chatMessage}`);
 
     if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
@@ -162,11 +160,11 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveChatMessage', { id, chatMessage, nickname });
+      .emit('receiveChat', { id, chatMessage, nickname });
     return { id, chatMessage };
   }
 
-  @SubscribeMessage('sendQuestionMessage')
+  @SubscribeMessage('sendQuestion')
   handleQuestionMessage(
     @ConnectedSocket()
     client: Socket,
@@ -181,7 +179,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     const id = uuid();
 
     Logger.debug(
-      `sendQuestionMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
+      `sendQuestion / (room: ${classId}) ${nickname} : ${chatMessage}`,
     );
 
     if (nickname === undefined || classId === undefined) {
@@ -198,7 +196,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       chatType.question,
     );
 
-    client.broadcast.to(String(classId)).emit('receiveQuestionMessage', {
+    client.broadcast.to(String(classId)).emit('receiveQuestion', {
       id,
       chatMessage,
       nickname,
@@ -207,7 +205,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     return { id, chatMessage };
   }
 
-  @SubscribeMessage('sendQuestionSolve')
+  @SubscribeMessage('sendResolved')
   handleQuestionSolve(
     @ConnectedSocket()
     client: Socket,
@@ -226,9 +224,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    client.broadcast
-      .to(String(classId))
-      .emit('recieveQuestionSolve', { chatId });
+    client.broadcast.to(String(classId)).emit('receiveResolved', { chatId });
     return {};
   }
 
