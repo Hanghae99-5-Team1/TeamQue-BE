@@ -11,7 +11,7 @@ async function bootstrap() {
       '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
     ),
   };
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule,{httpsOptions});
   //유효성 검사
   app.useGlobalPipes(
     new ValidationPipe({
