@@ -150,13 +150,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.chatService.saveChat(
-      classId,
-      nickname,
-      message,
-      id,
-      chatType.common,
-    );
+    this.chatService.saveChat(classId, nickname, message, id, chatType.common);
 
     client.broadcast
       .to(String(classId))
@@ -178,9 +172,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     const { classId, message } = data;
     const id = uuid();
 
-    Logger.debug(
-      `sendQuestion / (room: ${classId}) ${nickname} : ${message}`,
-    );
+    Logger.debug(`sendQuestion / (room: ${classId}) ${nickname} : ${message}`);
 
     if (nickname === undefined || classId === undefined) {
       client.disconnect(true);

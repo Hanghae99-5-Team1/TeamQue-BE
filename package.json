@@ -26,17 +26,6 @@
     "@nestjs/jwt": "^8.0.0",
     "@nestjs/passport": "^8.2.1",
     "@nestjs/platform-express": "^8.0.0",
-<<<<<<< HEAD
-    "@nestjs/platform-socket.io": "^8.4.1",
-    "@nestjs/typeorm": "^8.0.3",
-    "@nestjs/websockets": "^8.4.1",
-    "@types/passport-jwt": "^3.0.6",
-    "axios": "^0.26.1",
-    "bcryptjs": "^2.4.3",
-    "class-validator": "^0.13.2",
-    "config": "^3.3.7",
-    "dotenv": "^16.0.0",
-=======
     "@nestjs/platform-socket.io": "^8.4.3",
     "@nestjs/typeorm": "^8.0.3",
     "@nestjs/websockets": "^8.4.3",
@@ -49,7 +38,6 @@
     "config": "^3.3.7",
     "dotenv": "^16.0.0",
     "luxon": "^2.3.1",
->>>>>>> 709a134491bdcfc6d407646ffecf7c4b81d6104e
     "mysql2": "^2.3.3",
     "nodemailer": "^6.7.2",
     "passport": "^0.5.2",
