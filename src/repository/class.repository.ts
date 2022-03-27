@@ -6,7 +6,7 @@ import { ClassList } from '../entity/class.entity';
 @EntityRepository(ClassList)
 export class ClassListRepository extends Repository<ClassList> {
   async createClass(Dto, user: User, unique): Promise<object> {
-    const { title, times, imageUrl } = Dto;
+    const { title, times, imageUrl, startDate, endDate } = Dto;
     let time = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
@@ -23,6 +23,8 @@ export class ClassListRepository extends Repository<ClassList> {
       teacher: user.userName,
       imageUrl,
       uuid: unique,
+      startDate,
+      endDate,
     });
     await this.save(classlist);
     return classlist;

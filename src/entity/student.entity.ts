@@ -22,7 +22,7 @@ export class Student extends BaseEntity {
   updatedAt: Date;
 
   @Column()
-  state: string;
+  state: 'accepted' | 'wait' | 'rejected';
 
   @Column({ nullable: true })
   userId: number;

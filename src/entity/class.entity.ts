@@ -27,6 +27,12 @@ export class ClassList extends BaseEntity {
   @Column()
   teacher: string;
 
+  @Column()
+  startDate: string;
+
+  @Column()
+  endDate: string;
+
   @Column({ type: 'text', nullable: true })
   imageUrl: string;
 
