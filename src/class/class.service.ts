@@ -103,13 +103,20 @@ export class ClassService {
     const classdate = await this.classdateRepository
       .createQueryBuilder('D')
       .select(['D.day', 'D.startTime', 'D.endTime', 'C.title'])
+      .leftJoin('D.class', 'C')
       .where('D.classid = :classid', { classid: classlist.id })
       .andWhere('D.year = :year', { year })
       .andWhere('D.month = :month', { month })
       .orderBy('D.day', 'ASC')
       .getMany();
 
-    return classdate;
+    const mappingClassdate = classdate.map((data) => ({
+      day: data.day,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      title: data.class.title,
+    }));
+    return mappingClassdate;
   }
 
   async getAllClassDateByUser(user, year, month) {

@@ -56,7 +56,7 @@ export class UserController {
     @Headers('authorization') token1: string,
   ) {
     const token = token1.split(' ')[1];
-    return this.refreshService.getUserIfRefreshTokenMatches(token, user.id);
+    return this.refreshService.getUserIfRefreshTokenMatches(token, user);
   }
   //유저 닉네임 및 패스워드 수정
   @Put('/edit')
@@ -71,7 +71,7 @@ export class UserController {
     return { success: true, message: '수정성공' };
   }
   //로그아웃
-  @Post('/logout')
+  @Post('/signout')
   @UseGuards(JwtAuthGuard)
   logoutUser(@GetUser() user: User): Promise<object> {
     return this.refreshService.removeRefreshToken(user.id);

@@ -27,7 +27,7 @@ export class ClassController {
   constructor(private classService: ClassService) {}
   //내가 듣는 수업 날짜만 가져오기
   @Get('/date')
-  getClassDate(@GetUser() user: User, @Query() Query: GetAllDateByMonthDto) {
+  getClassDate(@GetUser() user: User, @Query() Query) {
     return this.classService.getAllClassDateByUser(
       user,
       Query.year,
@@ -36,10 +36,7 @@ export class ClassController {
   }
   //지정클레스의 수업날짜 가져오기  %%수정 -->쿼리로 바꾸기
   @Get('/date/:classid')
-  getclassdate(
-    @Param('classid') id: number,
-    @Query() Query: GetAllDateByMonthDto,
-  ) {
+  getclassdate(@Param('classid') id: number, @Query() Query) {
     return this.classService.getClassDate(id, Query.year, Query.month);
   }
   //지정클레스의 수업날짜 작성 (클레스의 time:string도 변경)

@@ -11,10 +11,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   Strategy,
   'jwt-refresh-token',
 ) {
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly userService: RefreshService,
-  ) {
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.get('refresh.secret'),
@@ -22,7 +19,6 @@ export class JwtRefreshStrategy extends PassportStrategy(
   }
 
   async validate(payload) {
-    console.log(payload);
     const { email } = payload;
     return email;
   }

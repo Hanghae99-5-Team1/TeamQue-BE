@@ -13,7 +13,7 @@ import { PostService } from './post.service';
 import { GetUser } from 'src/user/get-user.decorator';
 import { User } from 'src/entity/user.entity';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
-import { CreatePostDto } from './dto/creat-Post.dto';
+import { CreatePostDto } from './dto/creat-post.dto';
 import { CreateCommnetDto } from './dto/creat-comment.dto';
 import { CreateTodoDto } from './dto/creat-todo.dto';
 import { Todo } from '../entity/todo.entity';
@@ -47,8 +47,8 @@ export class PostController {
   }
   //투두리스트 상태 수정
   @Put('/todo/complete')
-  updateTodo(@Body() id: number): Promise<object> {
-    return this.postService.updateTodoState(id);
+  updateTodo(@Body() Dto): Promise<object> {
+    return this.postService.updateTodoState(Dto.id);
   }
 
   //투두리스트 수정
