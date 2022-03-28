@@ -215,6 +215,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       client.disconnect(true);
       return;
     }
+    Logger.debug(`sendResolved/ ${chatId}`);
 
     client.broadcast.to(String(classId)).emit('receiveResolved', { chatId });
     return {};
