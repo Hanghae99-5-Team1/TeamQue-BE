@@ -10,7 +10,7 @@ import {
 export class authSignInDto {
   @IsEmail({ message: '이메일형식을 지켜주세요' })
   @IsNotEmpty()
-  userEmail: string;
+  email: string;
 
   @IsString({ message: '문자열을 입력해주세요' })
   @IsNotEmpty()

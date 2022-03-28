@@ -1,22 +1,22 @@
 import { BadRequestException } from '@nestjs/common';
 import { User } from 'src/entity/user.entity';
 import { EntityRepository, Repository } from 'typeorm';
-import { Board } from '../entity/board.entity';
-import { BoardTypes } from '../boards/model/boardType.model';
+import { Post } from '../entity/post.entity';
+import { PostTypes } from '../post/model/postType.model';
 
-@EntityRepository(Board)
-export class BoardRepository extends Repository<Board> {
-  async createBoard(Dto, user: User, classList): Promise<object> {
-    const { title, description, boardType } = Dto;
-    if (!(boardType in BoardTypes)) {
+@EntityRepository(Post)
+export class PostRepository extends Repository<Post> {
+  async createPost(Dto, user: User, classList): Promise<object> {
+    const { title, content, postType } = Dto;
+    if (!(postType in PostTypes)) {
       throw new BadRequestException('보드타입을 확인해주세요');
     }
     const board = this.create({
       title,
-      description,
+      content,
       user,
-      writer: user.userName,
-      boardType,
+      author: user.name,
+      postType,
       class: classList,
     });
     await this.save(board);

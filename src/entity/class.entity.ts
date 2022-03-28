@@ -1,5 +1,5 @@
 import { User } from 'src/entity/user.entity';
-import { Board } from 'src/entity/board.entity';
+import { Post } from 'src/entity/post.entity';
 import {
   BaseEntity,
   Column,
@@ -22,7 +22,7 @@ export class ClassList extends BaseEntity {
   title: string;
 
   @Column()
-  time: string;
+  timeTable: string;
 
   @Column()
   teacher: string;
@@ -51,8 +51,8 @@ export class ClassList extends BaseEntity {
   @OneToMany((type) => Student, (student) => student.class)
   students: Student[];
 
-  @OneToMany((type) => Board, (board) => board.class)
-  boards: Board[];
+  @OneToMany((type) => Post, (post) => post.class)
+  posts: Post[];
 
   @OneToMany((type) => ClassDate, (classdate) => classdate.class)
   classdates: ClassDate[];

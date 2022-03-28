@@ -28,7 +28,7 @@ export class Student extends BaseEntity {
   userId: number;
 
   @Column()
-  userName: string;
+  name: string;
 
   @Column({ nullable: true })
   classId: number;

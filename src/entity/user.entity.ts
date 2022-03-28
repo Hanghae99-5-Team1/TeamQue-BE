@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { Board } from 'src/entity/board.entity';
+import { Post } from 'src/entity/post.entity';
 import { Comment } from 'src/entity/comment.entity';
 import { Todo } from 'src/entity/todo.entity';
 import { ClassList } from 'src/entity/class.entity';
@@ -18,23 +18,23 @@ import {
 @Entity()
 @Unique(['userEmail'])
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn() //uuid??
   id: number;
 
   @Column()
-  userName: string;
+  name: string;
 
   @Column({ nullable: true, default: null })
   password: string;
+
+  @Column()
+  email: string;
 
   @Column()
   userEmail: string;
 
   @Column({ nullable: true })
   provider: string;
-
-  @Column({ default: '배움은 끝이 없다.', nullable: true })
-  oneword: string;
 
   @Column({ nullable: true })
   @Exclude()
@@ -46,8 +46,8 @@ export class User extends BaseEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany((type) => Board, (board) => board.user)
-  boards: Board[];
+  @OneToMany((type) => Post, (post) => post.user)
+  posts: Post[];
 
   @OneToMany((type) => Todo, (todo) => todo.user)
   todos: Todo[];

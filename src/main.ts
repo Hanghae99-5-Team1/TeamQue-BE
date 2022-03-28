@@ -5,13 +5,13 @@ import * as config from 'config';
 import { readFileSync } from 'fs';
 
 async function bootstrap() {
-  const httpsOptions = {
-    key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
-    cert: readFileSync(
-      '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
-    ),
-  };
-  const app = await NestFactory.create(AppModule,{ httpsOptions });
+  // const httpsOptions = {
+  //   key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
+  //   cert: readFileSync(
+  //     '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
+  //   ),
+  // };
+  const app = await NestFactory.create(AppModule);
   //유효성 검사
   app.useGlobalPipes(
     new ValidationPipe({

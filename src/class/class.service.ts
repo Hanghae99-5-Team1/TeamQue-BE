@@ -7,6 +7,7 @@ import { ClassDateRepository } from '../repository/classDate.repository';
 import { StudentRepository } from '../repository/student.repository';
 import * as uuid from 'uuid';
 import { DateTime } from 'luxon';
+import { createQuery } from 'mysql2/typings/mysql/lib/Connection';
 
 @Injectable()
 export class ClassService {
@@ -29,7 +30,7 @@ export class ClassService {
       .select([
         'C.id',
         'C.title',
-        'C.time',
+        'C.timeTable',
         'C.teacher',
         'C.imageUrl',
         'C.startDate',
@@ -40,7 +41,7 @@ export class ClassService {
     const mappingClasslist = classlist.map((data) => ({
       id: data.id,
       title: data.title,
-      time: data.time.split('/').slice(0, -1),
+      time: data.timeTable.split('/').slice(0, -1),
       teacher: data.teacher,
       imageUrl: data.imageUrl,
       state: 'teach',
@@ -61,12 +62,11 @@ export class ClassService {
       .select([
         'C.id',
         'C.title',
-        'C.time',
+        'C.timeTable',
         'C.teacher',
         'C.imageUrl',
         'C.createdAt',
       ])
-      .leftJoinAndSelect('C.classdates', 'D')
       .where('C.id = :id', { id })
       .getOne();
   }
@@ -98,9 +98,17 @@ export class ClassService {
     return { success: true, message: '클레스 삭제 성공' };
   }
 
-  async getClassDate(id) {
+  async getClassDate(id, year, month) {
     const classlist = await this.classlistRepository.findOne({ id });
-    const classdate = await this.classdateRepository.find({ class: classlist });
+    const classdate = await this.classdateRepository
+      .createQueryBuilder('D')
+      .select(['D.day', 'D.startTime', 'D.endTime', 'C.title'])
+      .where('D.classid = :classid', { classid: classlist.id })
+      .andWhere('D.year = :year', { year })
+      .andWhere('D.month = :month', { month })
+      .orderBy('D.day', 'ASC')
+      .getMany();
+
     return classdate;
   }
 
@@ -127,15 +135,15 @@ export class ClassService {
   async createClassDate(Dto, id, user: User) {
     const { times, startDate, endDate } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
-    let time = '';
+    let timeTable = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
       const { day, startTime, endTime } = weekday;
-      time += `${days[day - 1]} ${startTime}~${endTime}/`;
+      timeTable += `${days[day - 1]} ${startTime}~${endTime}/`;
     }
     classlist.startDate = startDate;
     classlist.endDate = endDate;
-    classlist.time = time;
+    classlist.timeTable = timeTable;
     return this.classdateRepository.createClassDate(Dto, classlist);
   }
 
@@ -201,7 +209,7 @@ export class ClassService {
         'C.id',
         'C.title',
         'C.teacher',
-        'C.time',
+        'C.timeTable',
         'C.imageUrl',
         'S.state',
         'C.startDate',
@@ -215,7 +223,7 @@ export class ClassService {
       id: data.id,
       title: data.title,
       teacher: data.teacher,
-      time: data.time.split('/').slice(0, -1),
+      time: data.timeTable.split('/').slice(0, -1),
       imageUrl: data.imageUrl,
       state: data.students[0].state,
       progress:
@@ -229,21 +237,17 @@ export class ClassService {
   }
 
   async deleteStudent(id, user: User) {
-    const result = await this.studentRepository.delete({ id, user });
+    const result = await this.studentRepository.delete({ classId: id, user });
     if (result.affected === 0) {
       throw new NotFoundException('수강 취소 실패');
     }
     return { success: true, message: '수강 취소 성공' };
   }
-  async updateStudentState(Dto, studentid, classid, user) {
+  async updateStudentState(Dto, classid, user) {
     const { isOk } = Dto;
-    const classlist = await this.studentRepository.findOne({
-      id: classid,
-      user,
-    });
     const studentlist = await this.studentRepository.findOne({
-      id: studentid,
-      class: classlist,
+      classId: classid,
+      user,
     });
     if (isOk == true) {
       studentlist.state = 'accepted';

@@ -13,7 +13,7 @@ import {
 import { Comment } from './comment.entity';
 
 @Entity({ orderBy: { createdAt: 'DESC', id: 'DESC' } })
-export class Board extends BaseEntity {
+export class Post extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -21,13 +21,13 @@ export class Board extends BaseEntity {
   title: string;
 
   @Column({ type: 'text' })
-  description: string;
+  content: string;
 
   @Column()
-  writer: string;
+  author: string;
 
   @Column()
-  boardType: string;
+  postType: 'Notice' | 'Question';
 
   @CreateDateColumn()
   createdAt: Date;
@@ -41,13 +41,13 @@ export class Board extends BaseEntity {
   @Column({ nullable: true })
   classId: number;
 
-  @OneToMany((type) => Comment, (comment) => comment.board, { lazy: true })
+  @OneToMany((type) => Comment, (comment) => comment.post, { lazy: true })
   comments: Comment[];
 
-  @ManyToOne((type) => User, (user) => user.boards, { onDelete: 'CASCADE' })
+  @ManyToOne((type) => User, (user) => user.posts, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne((type) => ClassList, (classlist) => classlist.boards, {
+  @ManyToOne((type) => ClassList, (classlist) => classlist.posts, {
     onDelete: 'CASCADE',
   })
   class: ClassList;

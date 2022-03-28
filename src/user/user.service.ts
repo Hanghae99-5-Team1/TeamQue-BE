@@ -21,7 +21,7 @@ const refreshConfig = config.get('refresh');
 const kakaoConfig = config.get('kakao');
 
 @Injectable()
-export class AuthService {
+export class UserService {
   constructor(
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
@@ -33,7 +33,7 @@ export class AuthService {
 
   async signUp(Dto: AuthCredentialsDto): Promise<object> {
     const user = await this.userRepository.findOne({
-      userEmail: Dto.userEmail,
+      email: Dto.email,
     });
     if (user) {
       throw new BadRequestException(
@@ -44,11 +44,11 @@ export class AuthService {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
     const signupVerifyToken = uuid.v4();
-    await this.sendMemberJoinEmail(Dto.userEmail, signupVerifyToken);
+    await this.sendMemberJoinEmail(Dto.email, signupVerifyToken);
 
     this.userRepository.createUser(
-      Dto.userEmail,
-      Dto.nickname,
+      Dto.email,
+      Dto.name,
       null,
       Dto.password,
       signupVerifyToken,
@@ -71,28 +71,28 @@ export class AuthService {
       return;
     }
     const id = user.id;
-    const refreshToken = await this.makeRefreshToken(user.userEmail);
+    const refreshToken = await this.makeRefreshToken(user.email);
     await this.userRepository.update(id, { provider: 'local' });
     await this.userService.CurrnetRefreshToken(refreshToken, id);
     return;
   }
 
   async signIn(Dto): Promise<object> {
-    const { userEmail, password } = Dto;
-    const user = await this.userRepository.findOne({ userEmail });
+    const { email, password } = Dto;
+    const user = await this.userRepository.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       if (user.provider === null) {
         throw new BadRequestException('이메일 인증을 확인해주세요');
       }
-      const accessToken = await this.makeAccessToken(user.userEmail);
-      const refreshToken = await this.makeRefreshToken(user.userEmail);
+      const accessToken = await this.makeAccessToken(user.email);
+      const refreshToken = await this.makeRefreshToken(user.email);
       const id = user.id;
       await this.userService.CurrnetRefreshToken(refreshToken, id);
       return {
         accessToken,
         refreshToken,
-        nickname: user.userName,
+        name: user.name,
         success: true,
         message: '로그인성공',
       };
@@ -109,13 +109,13 @@ export class AuthService {
     return { success: true, message: '잘가세요..' };
   }
 
-  async makeAccessToken(userEmail) {
-    const payload = { userEmail };
+  async makeAccessToken(email) {
+    const payload = { email };
     const accessToken = await this.jwtService.sign(payload);
     return accessToken;
   }
-  async makeRefreshToken(userEmail) {
-    const payload = { userEmail };
+  async makeRefreshToken(email) {
+    const payload = { email };
     const refreshToken = await this.jwtService.sign(payload, {
       secret: refreshConfig.secret,
       expiresIn: '15d',
@@ -123,23 +123,17 @@ export class AuthService {
     return refreshToken;
   }
 
-  async modifyUsername(userName: string, id) {
-    await this.userRepository.update(id, { userName });
+  async editname(name: string, id) {
+    await this.userRepository.update(id, { name });
   }
 
-  async modifyPassword(Dto, id) {
+  async editPassword(Dto, id) {
     if (Dto.password !== Dto.confirmPassword) {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(Dto.password, salt);
     await this.userRepository.update(id, { password: hashedPassword });
-  }
-
-  async changOneword(id, Dto) {
-    const { oneword } = Dto;
-    await this.userRepository.update(id, { oneword });
-    return { success: true, message: '한줄 다짐 변경 성공' };
   }
 
   async kakaoSignin(query) {
@@ -174,27 +168,27 @@ export class AuthService {
       },
     });
     const userdata = response2.data;
-    // const userEmail = 'whtkdgusdldi@naver.com';
-    const userEmail = userdata.kakao_account.email;
-    const userName = userdata.properties.nickname;
+    // const email = 'whtkdgusdldi@naver.com';
+    const email = userdata.kakao_account.email;
+    const name = userdata.properties.nickname;
     const user = await this.userRepository.findOne({
-      userEmail,
+      email,
     });
-    const accessToken = await this.makeAccessToken(userEmail);
-    const refreshToken = await this.makeRefreshToken(userEmail);
+    const accessToken = await this.makeAccessToken(email);
+    const refreshToken = await this.makeRefreshToken(email);
     if (user) {
       this.userService.CurrnetRefreshToken(refreshToken, user['id']);
       return {
         success: true,
         accessToken,
         refreshToken,
-        nickname: user['userName'],
+        name: user['name'],
         message: '카카오 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
-        userEmail,
-        userName,
+        email,
+        name,
         'kakao',
       );
       this.userService.CurrnetRefreshToken(refreshToken, newUser);
