@@ -128,23 +128,21 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     return {};
   }
 
-  @SubscribeMessage('sendChatMessage')
+  @SubscribeMessage('sendChat')
   handleChatMessage(
     @ConnectedSocket()
     client: Socket,
     @MessageBody()
     data: {
       classId: number;
-      chatMessage: string;
+      message: string;
     },
   ): object {
     const nickname = client.data.nickname;
-    const { classId, chatMessage } = data;
+    const { classId, message } = data;
     const id = uuid();
 
-    Logger.debug(
-      `sendChatMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
-    );
+    Logger.debug(`sendChat / (room: ${classId}) ${nickname} : ${message}`);
 
     if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
@@ -152,37 +150,29 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.chatService.saveChat(
-      classId,
-      nickname,
-      chatMessage,
-      id,
-      chatType.common,
-    );
+    this.chatService.saveChat(classId, nickname, message, id, chatType.common);
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveChatMessage', { id, chatMessage, nickname });
-    return { id, chatMessage };
+      .emit('receiveChat', { id, message, nickname });
+    return { id, message };
   }
 
-  @SubscribeMessage('sendQuestionMessage')
+  @SubscribeMessage('sendQuestion')
   handleQuestionMessage(
     @ConnectedSocket()
     client: Socket,
     @MessageBody()
     data: {
       classId: number;
-      chatMessage: string;
+      message: string;
     },
   ): object {
     const nickname = client.data.nickname;
-    const { classId, chatMessage } = data;
+    const { classId, message } = data;
     const id = uuid();
 
-    Logger.debug(
-      `sendQuestionMessage / (room: ${classId}) ${nickname} : ${chatMessage}`,
-    );
+    Logger.debug(`sendQuestion / (room: ${classId}) ${nickname} : ${message}`);
 
     if (nickname === undefined || classId === undefined) {
       client.disconnect(true);
@@ -193,21 +183,21 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     this.chatService.saveChat(
       classId,
       nickname,
-      chatMessage,
+      message,
       id,
       chatType.question,
     );
 
-    client.broadcast.to(String(classId)).emit('receiveQuestionMessage', {
+    client.broadcast.to(String(classId)).emit('receiveQuestion', {
       id,
-      chatMessage,
+      message,
       nickname,
     });
 
-    return { id, chatMessage };
+    return { id, message };
   }
 
-  @SubscribeMessage('sendQuestionSolve')
+  @SubscribeMessage('sendResolved')
   handleQuestionSolve(
     @ConnectedSocket()
     client: Socket,
@@ -225,10 +215,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       client.disconnect(true);
       return;
     }
+    Logger.debug(`sendResolved/ ${chatId}`);
 
-    client.broadcast
-      .to(String(classId))
-      .emit('recieveQuestionSolve', { chatId });
+    client.broadcast.to(String(classId)).emit('receiveResolved', { chatId });
     return {};
   }
 
