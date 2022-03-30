@@ -6,7 +6,6 @@ import { ChatRepository } from 'src/repository/chat.repository';
 import { StudentRepository } from 'src/repository/student.repository';
 import { ReportRepository } from 'src/repository/report.repository';
 import { LikeRepository } from 'src/repository/like.repository';
-import { DeleteResult } from 'typeorm';
 import { UserRepository } from 'src/repository/user.repository';
 import * as jwt from 'jsonwebtoken';
 import { User } from 'src/entity/user.entity';

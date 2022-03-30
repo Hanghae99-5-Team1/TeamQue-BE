@@ -8,7 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ChatService } from './chat.service';
 import { chatType, stateType } from './chat.interface';
@@ -342,8 +342,10 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(@ConnectedSocket() client: Socket): void {
     const { userId, classId } = client.data;
 
-    if (classId === undefined) return;
-
+    if (classId === undefined) {
+      Logger.debug(`Disconnect / user:${userId}`);
+      return;
+    }
     const room = this.connectUsers.get(String(classId));
     if (room !== undefined) {
       room.get(userId)['state'] = stateType.disconnect;
