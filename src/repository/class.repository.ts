@@ -11,7 +11,7 @@ export class ClassListRepository extends Repository<ClassList> {
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
       const { day, startTime, endTime } = weekday;
-      timeTable += `${days[day - 1]} ${startTime}~${endTime}/`;
+      timeTable += `${days[day - 1]} [${startTime}~${endTime}]/`;
     }
     if (!timeTable) {
       throw new BadRequestException('수업일을 설정해주세요');

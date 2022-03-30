@@ -17,6 +17,8 @@ import { CreatePostDto } from './dto/creat-post.dto';
 import { CreateCommnetDto } from './dto/creat-comment.dto';
 import { CreateTodoDto } from './dto/creat-todo.dto';
 import { Todo } from '../entity/todo.entity';
+import { changeOrderTodoDto } from './dto/changeOrder-todo.dto';
+import { isCompleteTodoDto } from './dto/isComplete-todo.dto';
 
 @Controller('post')
 @UseGuards(JwtAuthGuard)
@@ -34,7 +36,7 @@ export class PostController {
   }
   //투두리스트 순서바꾸기
   @Put('/todo/order')
-  changeOrderTodo(@Body() Dto, @GetUser() user: User) {
+  changeOrderTodo(@Body() Dto: changeOrderTodoDto, @GetUser() user: User) {
     return this.postService.changeOrderTodo(Dto.to, Dto.from, user);
   }
   //투두리스트 삭제
@@ -47,7 +49,7 @@ export class PostController {
   }
   //투두리스트 상태 수정
   @Put('/todo/complete')
-  updateTodo(@Body() Dto): Promise<object> {
+  updateTodo(@Body() Dto: isCompleteTodoDto): Promise<object> {
     return this.postService.updateTodoState(Dto.id);
   }
 
@@ -55,7 +57,7 @@ export class PostController {
   @Delete('/todo/:todoid')
   editTodo(
     @Param('todoid') id: number,
-    @Body() Dto,
+    @Body() Dto: CreateTodoDto,
     @GetUser() user: User,
   ): Promise<object> {
     return this.postService.updateTodo(id, user, Dto);
@@ -64,7 +66,7 @@ export class PostController {
   //댓글 작성
   @Post('/comment/:postid')
   createComment(
-    @Param('postid') id: number, //-> 보드 바꾸기
+    @Param('postid') id: number,
     @Body() Dto: CreateCommnetDto,
     @GetUser() user: User,
   ): Promise<object> {
@@ -87,7 +89,6 @@ export class PostController {
   ): Promise<object> {
     return this.postService.updateComment(Dto, user, id);
   }
-
   //특정게시글 가져오기
   @Get('/detail/:postid')
   getPostSelested(

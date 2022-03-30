@@ -9,7 +9,7 @@ export class PostRepository extends Repository<Post> {
   async createPost(Dto, user: User, classList): Promise<object> {
     const { title, content, postType } = Dto;
     if (!(postType in PostTypes)) {
-      throw new BadRequestException('보드타입을 확인해주세요');
+      throw new BadRequestException('postType을 확인해주세요');
     }
     const board = this.create({
       title,

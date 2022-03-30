@@ -34,7 +34,7 @@ export class ClassController {
       Query.month,
     );
   }
-  //지정클레스의 수업날짜 가져오기  %%수정 -->쿼리로 바꾸기
+  //지정클레스의 수업날짜 가져오기
   @Get('/date/:classid')
   getclassdate(@Param('classid') id: number, @Query() Query) {
     return this.classService.getClassDate(id, Query.year, Query.month);
@@ -88,13 +88,14 @@ export class ClassController {
     return this.classService.deleteStudent(id, user);
   }
   //선생님의 수강신청 처리
-  @Put('/student/:classid')
+  @Put('/student/:classid/:studentid')
   updateStudentState(
+    @Param('studentid') studentid: number,
     @Param('classid') classid: number,
     @GetUser() user: User,
     @Body() Dto: StudentStateDto,
   ) {
-    return this.classService.updateStudentState(Dto, classid, user);
+    return this.classService.updateStudentState(Dto, classid, studentid, user);
   }
   //클레스만들기 (+ 클레스 일정)
   @Post('/')
@@ -117,8 +118,8 @@ export class ClassController {
   //지정 클레스 정보 가져오기
   //Dto 확인
   @Get('/:classid')
-  getSelectedClass(@Param('classid') id: number, @Body() Dto): Promise<object> {
-    return this.classService.getSelectedClass(Dto, id);
+  getSelectedClass(@Param('classid') id: number): Promise<object> {
+    return this.classService.getSelectedClass(id);
   }
   //클레스 정보 수정(타이틀,url)
   @Put('/:classid')

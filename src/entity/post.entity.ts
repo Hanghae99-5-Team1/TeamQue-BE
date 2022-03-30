@@ -41,7 +41,7 @@ export class Post extends BaseEntity {
   @Column({ nullable: true })
   classId: number;
 
-  @OneToMany((type) => Comment, (comment) => comment.post, { lazy: true })
+  @OneToMany((type) => Comment, (comment) => comment.post)
   comments: Comment[];
 
   @ManyToOne((type) => User, (user) => user.posts, { onDelete: 'CASCADE' })

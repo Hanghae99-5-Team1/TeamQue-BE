@@ -29,8 +29,7 @@ export class UserRepository extends Repository<User> {
     });
     try {
       await this.save(user);
-      const theUser = this.findOne({ name, email });
-      return theUser['id'];
+      return user['id'];
     } catch (error) {
       console.log(error);
       if (error.code === 'ER_DUP_ENTRY') {

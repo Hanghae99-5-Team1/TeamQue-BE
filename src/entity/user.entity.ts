@@ -33,7 +33,7 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   provider: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, default: null })
   @Exclude()
   currentHashedRefreshToken?: string;
 

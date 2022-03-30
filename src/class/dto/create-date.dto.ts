@@ -1,18 +1,15 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { DateDto } from './date.dto';
 
 export class CreateDateDto {
-  @IsNotEmpty()
-  @IsString()
+  @IsString({ message: '시작일을 입력해주세요' })
   startDate: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsString({ message: '종료일을 입력해주세요' })
   endDate: string;
 
-  @IsNotEmpty()
-  @IsArray()
+  @IsArray({ message: '강의날짜를 배열로 입력해주세요' })
   @ValidateNested({ each: true })
   @Type(() => DateDto)
   times: DateDto[];

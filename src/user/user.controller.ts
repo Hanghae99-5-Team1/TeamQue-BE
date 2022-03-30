@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Headers,
+  Param,
   Post,
   Put,
   Query,
@@ -19,6 +21,7 @@ import { RefreshService } from './refresh.service';
 import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import { EditInfoDto } from './dto/modify-user.dto';
 import { authSignInDto } from './dto/auth-signin.dto';
+import { Hash } from 'crypto';
 
 @Controller('user')
 export class UserController {
@@ -43,11 +46,39 @@ export class UserController {
   signIn(@Body() Dto: authSignInDto): Promise<object> {
     return this.userService.signIn(Dto);
   }
-  //카카오 로그인
+  //카카오 콜벡
   @Get('/kakao/callback')
-  kakaoSignin(@Query() query) {
-    return this.userService.kakaoSignin(query.code);
+  kakaoCallback(@Query() query) {
+    return this.userService.kakaoCallback(query.code);
   }
+  //카카오 인증요청
+  @Get('/kakao')
+  @Redirect('https://kauth.kakao.com')
+  async kakakoSignin() {
+    const { KAKAO_ID, KAKAO_REDIRECT_URI } =
+      await this.userService.kakaoSignin();
+    return {
+      url: `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_ID}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`,
+    };
+  }
+
+  //구글콜백
+  @Get('/google/callback')
+  googleCallback(@Query() query) {
+    return this.userService.googleCallback(query.code);
+  }
+
+  //구글 인증요청
+  @Get('/google')
+  @Redirect('https://accounts.google.com/')
+  async googleSignin() {
+    const { GOOGLE_ID, GOOGLE_REDIRECT_URI } =
+      await this.userService.googleSignin();
+    return {
+      url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_ID}&response_type=code&redirect_uri=${GOOGLE_REDIRECT_URI}&scope=https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email`,
+    };
+  }
+
   //엑서스 토큰 재발행
   @Post('/refresh')
   @UseGuards(JwtRefreshGuard)
@@ -68,6 +99,9 @@ export class UserController {
     if (Dto.password && Dto.confirmPassword) {
       this.userService.editPassword(Dto, user.id);
     }
+    if (!Dto.name && !Dto.password && !Dto.confirmPassword) {
+      throw new BadRequestException('입력된 값이 없습니다');
+    }
     return { success: true, message: '수정성공' };
   }
   //로그아웃
@@ -85,9 +119,8 @@ export class UserController {
   //유저정보확인
   @Get('/')
   @UseGuards(JwtAuthGuard)
-  test(@GetUser() user: User, @Headers() bearer) {
+  test(@GetUser() user: User) {
     return {
-      bearer,
       name: user.name,
       id: user.id,
       email: user.email,

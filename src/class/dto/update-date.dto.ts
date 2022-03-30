@@ -1,23 +1,18 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsString } from 'class-validator';
 
 export class UpdateDateDto {
-  @IsNotEmpty()
-  @IsInt()
+  @IsInt({ message: '년도를 입력해주세요' })
   year: number;
 
-  @IsNotEmpty()
-  @IsInt()
+  @IsInt({ message: '달을 입력해주세요' })
   month: number;
 
-  @IsNotEmpty()
-  @IsInt()
+  @IsInt({ message: '날짜를 입력해주세요' })
   day: number;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsString({ message: '시작시간을 입력해주세요' })
   startTime: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsString({ message: '종료시간을 입력해주세요' })
   endTime: string;
 }

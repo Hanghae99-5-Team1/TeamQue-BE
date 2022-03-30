@@ -30,6 +30,9 @@ export class PostService {
 
   async createPost(Dto, user: User, id): Promise<object> {
     const classList = await this.classService.findClassById(id);
+    if (!classList) {
+      throw new BadRequestException('강의가 없습니다');
+    }
     return this.postRepository.createPost(Dto, user, classList);
   }
 
@@ -71,7 +74,7 @@ export class PostService {
     if (!page) {
       page = 1;
     }
-    const questionPage = 20 - postListNotice.length;
+    const questionPage = 15 - postListNotice.length;
     const skipPage = questionPage * (page - 1);
     const postCountquestion = await this.postRepository.count({
       where: {
@@ -106,6 +109,9 @@ export class PostService {
       throw new BadRequestException('보드타입을 확인해주세요');
     }
     const post = await this.postRepository.findOne({ id, user });
+    if (!post) {
+      throw new BadRequestException('게시글이 없습니다');
+    }
     post.title = title;
     post.content = content;
     post.postType = postType;
@@ -116,6 +122,9 @@ export class PostService {
 
   async createComment(Dto, user: User, id): Promise<object> {
     const post = await this.postRepository.findOne({ id });
+    if (!post) {
+      throw new BadRequestException('해당 게시글은 없습니다');
+    }
     return this.commentRepository.createCommnet(Dto, user, post);
   }
 
@@ -130,6 +139,9 @@ export class PostService {
   async updateComment(Dto, user: User, id: number): Promise<object> {
     const { content } = Dto;
     const comment = await this.commentRepository.findOne({ id, user });
+    if (!comment) {
+      throw new BadRequestException('댓글이 없습니다');
+    }
     comment.content = content;
     await this.commentRepository.save(comment);
 
