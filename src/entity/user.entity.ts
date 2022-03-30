@@ -14,6 +14,7 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { Like } from './like.entity';
 
 @Entity()
 @Unique(['userEmail'])

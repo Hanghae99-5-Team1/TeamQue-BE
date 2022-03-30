@@ -3,11 +3,13 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Like } from './like.entity';
 
 @Entity()
-export class ChatLog {
+export class Chat {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -15,10 +17,19 @@ export class ChatLog {
   classId: number;
 
   @Column()
-  writer: string;
+  userId: number;
 
   @Column()
-  contents: string;
+  userName: string;
+
+  @Column()
+  content: string;
+
+  @Column()
+  isResolved: boolean;
+
+  @Column()
+  like: number;
 
   @Column()
   uuid: string;
@@ -31,4 +42,7 @@ export class ChatLog {
 
   @DeleteDateColumn({ name: 'delete_at' })
   deletedAt?: Date | null;
+
+  @OneToMany((type) => Like, (like) => like.chat)
+  likes: Like[];
 }
