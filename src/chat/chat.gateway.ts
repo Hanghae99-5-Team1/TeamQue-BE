@@ -40,12 +40,13 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     const { classId } = payload;
     const strClassId = String(payload.classId);
 
-    client.data.classId = payload.classId;
+    client.data.classId = classId;
 
-    if (userId === undefined) {
-      Logger.debug(`${userId} / joinRoom / 인자가 없습니다.`);
+    const result = await this.chatService.isStudent(classId, userId);
+    if (!result) {
+      Logger.debug(`${userId}학생은 ${classId}반이 아닙니다.`);
       client.disconnect(true);
-      return;
+      return {};
     }
 
     const chatList = await this.chatService.findQuestion(
@@ -84,10 +85,6 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
 
     console.log(this.connectUsers.get(strClassId), chatList);
 
-    // return {
-    //   userList: Object.fromEntries(this.connectUsers.get(strClassId)),
-    //   chatList,
-    // };
     return {
       userList: Object.fromEntries(this.connectUsers.get(strClassId)),
       chatList: chatList.slice(0, 9),
@@ -126,8 +123,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       content: string;
     },
   ): object {
-    const userId = client.data.userId;
-    const userName = client.data.userName;
+    const { userId, name } = client.data;
     const { classId, content } = data;
     const id = uuid();
 
@@ -142,7 +138,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     this.chatService.saveChat(
       classId,
       userId,
-      userName,
+      name,
       content,
       id,
       chatType.common,
@@ -150,7 +146,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveChat', { chatId: id, content, userId, userName });
+      .emit('receiveChat', { chatId: id, content, userId, name });
     return { chatId: id, content };
   }
 
@@ -165,7 +161,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ): object {
     const userId: number = client.data.userId;
-    const userName: string = client.data.userName;
+    const name: string = client.data.name;
     const { classId, content } = data;
     const id = uuid();
 
@@ -180,7 +176,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     this.chatService.saveChat(
       classId,
       userId,
-      userName,
+      name,
       content,
       id,
       chatType.question,
@@ -190,7 +186,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       chatId: id,
       content,
       userId,
-      userName,
+      name,
     });
 
     return { chatId: id, content };
@@ -245,8 +241,6 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     }
     Logger.debug(`sendResolved/ ${chatId}`);
 
-    // this.chatService.likeQuestion(userId, classId, chatId);
-
     client.broadcast.to(String(classId)).emit('receiveResolved', { chatId });
     return { success: 'true' };
   }
@@ -267,33 +261,67 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     return {};
   }
 
-  @SubscribeMessage('sendLike')
-  async handleLikeQuestion(
+  @SubscribeMessage('sendLikeUp')
+  async handleLikeUp(
     @ConnectedSocket()
     client: Socket,
     @MessageBody()
-    data: {
+    payload: {
       classId: number;
       chatId: string;
     },
   ): Promise<object | void> {
-    const { userName, userId } = client.data;
-    const { classId, chatId } = data;
+    const { name, userId } = client.data;
+    const { classId, chatId } = payload;
 
     Logger.debug(
-      `sendLike / (room: ${classId}), ${chatId}, ${userName} , ${userId}`,
+      `sendLikeUp / (room: ${classId}), ${chatId}, ${name} , ${userId}`,
     );
 
-    const result = await this.chatService.likeQuestion(userId, classId, chatId);
+    const result = await this.chatService.likeUp(userId, classId, chatId);
     if (!result) {
-      Logger.debug(`강제로 ${userId}가 끊겼습니다.`);
+      Logger.debug(
+        `강제로 ${userId}가 끊겼습니다. 이미 올렸거나 잘못된 요청입니다.`,
+      );
       client.disconnect(true);
       return;
     }
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveLike', { userId, userName, chatId });
+      .emit('receiveLikeUp', { userId, name, chatId });
+    return {};
+  }
+
+  @SubscribeMessage('sendLikeDown')
+  async handleLikeDown(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    payload: {
+      classId: number;
+      chatId: string;
+    },
+  ): Promise<object> {
+    const { name, userId } = client.data;
+    const { classId, chatId } = payload;
+
+    Logger.debug(
+      `sendLikeDown / (room: ${classId}), ${chatId}, ${name} , ${userId}`,
+    );
+
+    const result = await this.chatService.likeDown(userId, classId, chatId);
+    if (!result) {
+      Logger.debug(
+        `강제로 ${userId}가 끊겼습니다. 이미 내렸거나 잘못된 요청입니다.`,
+      );
+      client.disconnect(true);
+      return;
+    }
+
+    client.broadcast
+      .to(String(classId))
+      .emit('receiveLikeDown', { userId, name, chatId });
     return {};
   }
 
@@ -334,9 +362,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.data.userId = user.id;
-    client.data.userName = user.name;
+    client.data.name = user.name;
 
-    Logger.debug(`${client.data.userId}/${client.data.userName}이 들어왔어요.`);
+    Logger.debug(`${client.data.userId}/${client.data.name}이 들어왔어요.`);
     return;
   }
 

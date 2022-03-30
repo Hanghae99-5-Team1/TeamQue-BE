@@ -34,7 +34,7 @@ export class ChatService {
       const payload = jwt.verify(token.split(' ')[1], jwtConfig.secret);
       console.log(payload);
       const user: User = await this.userRepository.findOne({
-        where: { userEmail: payload['email'] },
+        where: { email: payload['email'] },
       });
       return user !== undefined ? user : null;
     } catch (e) {
@@ -102,6 +102,12 @@ export class ChatService {
     return result.affected ? true : false;
   }
 
+  async isStudent(classId: number, userId: number): Promise<boolean> {
+    const student = await this.studentRepository.findOne({ classId, userId });
+    if (student === undefined) return false;
+    return true;
+  }
+
   async findStudents(classId: number): Promise<Student[]> {
     return await this.studentRepository.find({
       select: ['userId', 'name'],
@@ -113,7 +119,7 @@ export class ChatService {
     return await this.studentRepository.findOne({ userId });
   }
 
-  async likeQuestion(
+  async likeUp(
     userId: number,
     classId: number,
     chatId: string,
@@ -128,22 +134,47 @@ export class ChatService {
       where: { userId, uuid: chatId },
     });
 
-    if (findLike === undefined) {
-      const like = this.likeRepository.create({
-        userId,
-        classId,
-        uuid: chatId,
-        chat: findQuestion,
-      });
+    if (findLike !== undefined) return false;
 
-      this.likeRepository.save(like);
-      findQuestion.like += 1;
-    } else {
-      this.likeRepository.delete(findLike);
-      findQuestion.like -= 1;
-    }
+    const like = this.likeRepository.create({
+      userId,
+      classId,
+      uuid: chatId,
+      chat: findQuestion,
+    });
+    this.likeRepository.save(like);
 
+    findQuestion.like += 1;
     this.chatRepository.save(findQuestion);
+    return true;
+  }
+
+  async likeDown(
+    userId: number,
+    classId: number,
+    chatId: string,
+  ): Promise<boolean> {
+    const findQuestion = await this.chatRepository.findOne({
+      where: { uuid: chatId },
+    });
+
+    if (findQuestion === undefined) return false;
+
+    const findLike = await this.likeRepository.findOne({
+      where: { userId, uuid: chatId },
+    });
+
+    if (findLike === undefined) return false;
+
+    await this.likeRepository.delete({
+      userId,
+      classId,
+      uuid: chatId,
+    });
+
+    findQuestion.like -= 1;
+    this.chatRepository.save(findQuestion);
+
     return true;
   }
 
