@@ -213,14 +213,15 @@ export class ClassService {
     return { success: true, message: '클레스 달력 전부 삭제 성공' };
   }
 
-  async createStudent(id, user: User) {
-    const classlist = await this.classlistRepository.findOne({ id });
+  async createStudent(Dto, user: User) {
+    const { uuid } = Dto;
+    const classlist = await this.classlistRepository.findOne({ uuid });
     if (!classlist) {
       throw new BadRequestException('강의가 없습니다');
     }
     const findExist = await this.studentRepository.findOne({
       user,
-      classId: id,
+      classId: classlist.id,
     });
     if (findExist) {
       throw new BadRequestException('이미 신청한 강의입니다');

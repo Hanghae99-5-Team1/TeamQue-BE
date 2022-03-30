@@ -20,6 +20,7 @@ import { GetAllDateByMonthDto } from './dto/get-dateAllByMonth.dto';
 import { StudentStateDto } from './dto/studentState.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { UpdateDateDto } from './dto/update-date.dto';
+import { CreateStudentDto } from './dto/create-student.dto';
 
 @Controller('class')
 @UseGuards(JwtAuthGuard)
@@ -73,9 +74,9 @@ export class ClassController {
     return this.classService.deleteClassDate(classid, classdateid, user);
   }
   //학생의 수강신청
-  @Post('/student/:classid')
-  createStudent(@Param('classid') id: number, @GetUser() user: User) {
-    return this.classService.createStudent(id, user);
+  @Post('/student')
+  createStudent(@Body() Dto: CreateStudentDto, @GetUser() user: User) {
+    return this.classService.createStudent(Dto, user);
   }
   //특정클레스를 듣는 학생 가져오기
   @Get('/student/:classid')
