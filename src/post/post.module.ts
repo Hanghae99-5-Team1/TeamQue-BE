@@ -1,24 +1,24 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from 'src/auth/auth.module';
+import { UserModule } from 'src/user/user.module';
 import { ClassModule } from 'src/class/class.module';
-import { BoardRepository } from '../repository/board.repository';
-import { BoardsController } from './boards.controller';
-import { BoardsService } from './boards.service';
+import { PostRepository } from '../repository/post.repository';
+import { PostController } from './post.controller';
+import { PostService } from './post.service';
 import { CommentRepository } from '../repository/comment.repository';
 import { TodoRepository } from '../repository/todo.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      BoardRepository,
+      PostRepository,
       CommentRepository,
       TodoRepository,
     ]),
-    AuthModule,
+    UserModule,
     ClassModule,
   ],
-  controllers: [BoardsController],
-  providers: [BoardsService],
+  controllers: [PostController],
+  providers: [PostService],
 })
-export class BoardsModule {}
+export class PostModule {}

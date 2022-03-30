@@ -19,9 +19,10 @@ import { EmailService } from './email.service';
 
 const refreshConfig = config.get('refresh');
 const kakaoConfig = config.get('kakao');
+const googleConfig = config.get('google');
 
 @Injectable()
-export class AuthService {
+export class UserService {
   constructor(
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
@@ -33,7 +34,7 @@ export class AuthService {
 
   async signUp(Dto: AuthCredentialsDto): Promise<object> {
     const user = await this.userRepository.findOne({
-      userEmail: Dto.userEmail,
+      email: Dto.email,
     });
     if (user) {
       throw new BadRequestException(
@@ -44,11 +45,11 @@ export class AuthService {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
     const signupVerifyToken = uuid.v4();
-    await this.sendMemberJoinEmail(Dto.userEmail, signupVerifyToken);
+    await this.sendMemberJoinEmail(Dto.email, signupVerifyToken);
 
     this.userRepository.createUser(
-      Dto.userEmail,
-      Dto.nickname,
+      Dto.email,
+      Dto.name,
       null,
       Dto.password,
       signupVerifyToken,
@@ -71,28 +72,28 @@ export class AuthService {
       return;
     }
     const id = user.id;
-    const refreshToken = await this.makeRefreshToken(user.userEmail);
+    const refreshToken = await this.makeRefreshToken(user.email);
     await this.userRepository.update(id, { provider: 'local' });
     await this.userService.CurrnetRefreshToken(refreshToken, id);
     return;
   }
 
   async signIn(Dto): Promise<object> {
-    const { userEmail, password } = Dto;
-    const user = await this.userRepository.findOne({ userEmail });
+    const { email, password } = Dto;
+    const user = await this.userRepository.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       if (user.provider === null) {
-        throw new BadRequestException('이메일 인증을 확인해주세요');
+        throw new BadRequestException('이메일 인증을 진행해주세요');
       }
-      const accessToken = await this.makeAccessToken(user.userEmail);
-      const refreshToken = await this.makeRefreshToken(user.userEmail);
+      const accessToken = await this.makeAccessToken(user.email);
+      const refreshToken = await this.makeRefreshToken(user.email);
       const id = user.id;
       await this.userService.CurrnetRefreshToken(refreshToken, id);
       return {
         accessToken,
         refreshToken,
-        nickname: user.userName,
+        name: user.name,
         success: true,
         message: '로그인성공',
       };
@@ -109,13 +110,13 @@ export class AuthService {
     return { success: true, message: '잘가세요..' };
   }
 
-  async makeAccessToken(userEmail) {
-    const payload = { userEmail };
+  async makeAccessToken(email) {
+    const payload = { email };
     const accessToken = await this.jwtService.sign(payload);
     return accessToken;
   }
-  async makeRefreshToken(userEmail) {
-    const payload = { userEmail };
+  async makeRefreshToken(email) {
+    const payload = { email };
     const refreshToken = await this.jwtService.sign(payload, {
       secret: refreshConfig.secret,
       expiresIn: '15d',
@@ -123,11 +124,11 @@ export class AuthService {
     return refreshToken;
   }
 
-  async modifyUsername(userName: string, id) {
-    await this.userRepository.update(id, { userName });
+  async editname(name: string, id) {
+    await this.userRepository.update(id, { name });
   }
 
-  async modifyPassword(Dto, id) {
+  async editPassword(Dto, id) {
     if (Dto.password !== Dto.confirmPassword) {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
@@ -136,13 +137,90 @@ export class AuthService {
     await this.userRepository.update(id, { password: hashedPassword });
   }
 
-  async changOneword(id, Dto) {
-    const { oneword } = Dto;
-    await this.userRepository.update(id, { oneword });
-    return { success: true, message: '한줄 다짐 변경 성공' };
+  async kakaoSignin() {
+    const data = {
+      KAKAO_ID: kakaoConfig.client_id,
+      KAKAO_REDIRECT_URI: kakaoConfig.redirect_uri,
+    };
+    return data;
   }
 
-  async kakaoSignin(query) {
+  async googleSignin() {
+    const data = {
+      GOOGLE_ID: googleConfig.client_id,
+      GOOGLE_REDIRECT_URI: googleConfig.redirect_uri,
+      // GOOGLE_REDIRECT_URI: 'http://localhost:3000/user/google/callback',
+    };
+    return data;
+  }
+  async googleCallback(query) {
+    const data = {
+      code: query,
+      grant_type: 'authorization_code',
+      client_id: googleConfig.client_id,
+      redirect_uri: googleConfig.redirect_uri,
+      // redirect_uri: 'http://localhost:3000/user/google/callback',
+      client_secret: googleConfig.client_secret,
+      Scopes: 'https://www.googleapis.com/auth/userinfo.email',
+    };
+
+    const queryStringBody = Object.keys(data)
+      .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
+      .join('&');
+    const config: AxiosRequestConfig = {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    };
+    const response = await axios.post(
+      'https://www.googleapis.com/oauth2/v4/token',
+      queryStringBody,
+      config,
+    );
+    const { access_token } = response.data;
+    const getUserUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+    const response2 = await axios({
+      method: 'get',
+      url: getUserUrl,
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        accept: 'application/json',
+      },
+    });
+    const userdata = response2.data;
+    const email = userdata.email;
+    const name = userdata.name;
+    const user = await this.userRepository.findOne({
+      email,
+    });
+    const accessToken = await this.makeAccessToken(email);
+    const refreshToken = await this.makeRefreshToken(email);
+    if (user) {
+      await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
+      return {
+        success: true,
+        accessToken,
+        refreshToken,
+        name: user['name'],
+        message: '구글 로그인 성공',
+      };
+    } else {
+      const newUser = await this.userRepository.createUser(
+        email,
+        name,
+        'google',
+      );
+      await this.userService.CurrnetRefreshToken(refreshToken, newUser);
+      return {
+        success: true,
+        accessToken,
+        refreshToken,
+        message: '구글 인증 및 로그인 성공',
+      };
+    }
+  }
+
+  async kakaoCallback(query) {
     const data = {
       code: query,
       grant_type: 'authorization_code',
@@ -150,6 +228,7 @@ export class AuthService {
       redirect_uri: kakaoConfig.redirect_uri,
       client_secret: kakaoConfig.client_secret,
     };
+
     const queryStringBody = Object.keys(data)
       .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
       .join('&');
@@ -174,30 +253,30 @@ export class AuthService {
       },
     });
     const userdata = response2.data;
-    // const userEmail = 'whtkdgusdldi@naver.com';
-    const userEmail = userdata.kakao_account.email;
-    const userName = userdata.properties.nickname;
+    // const email = 'whtkdgusdldi@naver.com';
+    const email = userdata.kakao_account.email;
+    const name = userdata.properties.nickname;
     const user = await this.userRepository.findOne({
-      userEmail,
+      email,
     });
-    const accessToken = await this.makeAccessToken(userEmail);
-    const refreshToken = await this.makeRefreshToken(userEmail);
+    const accessToken = await this.makeAccessToken(email);
+    const refreshToken = await this.makeRefreshToken(email);
     if (user) {
-      this.userService.CurrnetRefreshToken(refreshToken, user['id']);
+      await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
       return {
         success: true,
         accessToken,
         refreshToken,
-        nickname: user['userName'],
+        name: user['name'],
         message: '카카오 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
-        userEmail,
-        userName,
+        email,
+        name,
         'kakao',
       );
-      this.userService.CurrnetRefreshToken(refreshToken, newUser);
+      await this.userService.CurrnetRefreshToken(refreshToken, newUser);
       return {
         success: true,
         accessToken,

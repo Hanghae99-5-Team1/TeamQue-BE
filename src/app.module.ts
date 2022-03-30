@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
 import { Connection } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BoardsModule } from './boards/boards.module';
+import { PostModule } from './post/post.module';
 import { typeORMConfig } from './configs/typeorm.config';
-import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 import { ClassModule } from './class/class.module';
 import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeORMConfig),
-    BoardsModule,
-    AuthModule,
+    PostModule,
+    UserModule,
     ClassModule,
     ChatModule,
   ],

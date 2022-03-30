@@ -1,11 +1,10 @@
-import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class UpdateClassDto {
-  @IsNotEmpty({ message: '강의명을 입력해주세요' })
-  @IsString({ message: '문자열을 입력해주세요' })
+  @IsString({ message: '제목을 입력해주세요' })
   title: string;
 
-  @IsUrl()
   @IsOptional()
+  @IsUrl({ message: 'url을 입력해주세요' })
   imageUrl?: string;
 }

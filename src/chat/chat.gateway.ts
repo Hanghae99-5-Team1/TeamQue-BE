@@ -59,18 +59,18 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       const room = this.connectUsers.get(strClassId);
 
       if (room.size !== userList[1]) {
-        userList[0].forEach(({ userId, userName }) => {
+        userList[0].forEach(({ userId, name }) => {
           if (!room.has(userId)) {
-            room.set(userId, { userName, state: stateType.disconnect });
+            room.set(userId, { name, state: stateType.disconnect });
           }
         });
       }
     } else {
       this.connectUsers.set(strClassId, new Map<number, object>());
-      userList[0].forEach(({ userId, userName }) => {
+      userList[0].forEach(({ userId, name }) => {
         this.connectUsers
           .get(strClassId)
-          .set(userId, { userName, state: stateType.disconnect });
+          .set(userId, { name, state: stateType.disconnect });
       });
     }
 
@@ -243,6 +243,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       client.disconnect(true);
       return;
     }
+    Logger.debug(`sendResolved/ ${chatId}`);
 
     // this.chatService.likeQuestion(userId, classId, chatId);
 
@@ -333,7 +334,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.data.userId = user.id;
-    client.data.userName = user.userName;
+    client.data.userName = user.name;
 
     Logger.debug(`${client.data.userId}/${client.data.userName}이 들어왔어요.`);
     return;

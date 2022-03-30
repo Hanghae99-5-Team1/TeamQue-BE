@@ -1,5 +1,5 @@
 import { User } from 'src/entity/user.entity';
-import { Board } from './board.entity';
+import { Post } from './post.entity';
 import {
   BaseEntity,
   Column,
@@ -16,16 +16,16 @@ export class Comment extends BaseEntity {
   id: number;
 
   @Column()
-  description: string;
+  content: string;
 
   @Column()
-  writer: string;
+  author: string;
 
   @Column({ nullable: true })
   userId: number;
 
   @Column({ nullable: true })
-  boardId: number;
+  postId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -36,8 +36,8 @@ export class Comment extends BaseEntity {
   @ManyToOne((type) => User, (user) => user.comments, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne((type) => Board, (board) => board.comments, {
+  @ManyToOne((type) => Post, (post) => post.comments, {
     onDelete: 'CASCADE',
   })
-  board: Board;
+  post: Post;
 }

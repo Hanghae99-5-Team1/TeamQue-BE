@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BoardRepository } from '../repository/board.repository';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entity/user.entity';
 import { CommentRepository } from '../repository/comment.repository';
@@ -12,13 +12,14 @@ import { ClassService } from 'src/class/class.service';
 import { Todo } from '../entity/todo.entity';
 import { TodoRepository } from '../repository/todo.repository';
 import { Connection } from 'typeorm';
-import { BoardTypes } from './model/boardType.model';
+import { PostTypes } from './model/postType.model';
+import { PostRepository } from 'src/repository/post.repository';
 
 @Injectable()
-export class BoardsService {
+export class PostService {
   constructor(
-    @InjectRepository(BoardRepository)
-    private boardRepository: BoardRepository,
+    @InjectRepository(PostRepository)
+    private postRepository: PostRepository,
     private classService: ClassService,
     @InjectRepository(CommentRepository)
     private commentRepository: CommentRepository,
@@ -27,41 +28,44 @@ export class BoardsService {
     private connection: Connection,
   ) {}
 
-  async createBoard(Dto, user: User, id): Promise<object> {
+  async createPost(Dto, user: User, id): Promise<object> {
     const classList = await this.classService.findClassById(id);
-    return this.boardRepository.createBoard(Dto, user, classList);
+    if (!classList) {
+      throw new BadRequestException('강의가 없습니다');
+    }
+    return this.postRepository.createPost(Dto, user, classList);
   }
 
-  async getBoardSelested(user: User, id: number): Promise<object> {
-    const board = await this.boardRepository
-      .createQueryBuilder('B')
+  async getPostSelested(user: User, id: number): Promise<object> {
+    const post = await this.postRepository
+      .createQueryBuilder('P')
       .select([
-        'B.id',
-        'B.title',
-        'B.writer',
-        'B.boardType',
-        'B.createdAt',
-        'B.description',
+        'P.id',
+        'P.title',
+        'P.author',
+        'P.postType',
+        'P.createdAt',
+        'P.content',
       ])
-      .where('B.id = :id', { id })
-      .leftJoinAndSelect('B.comments', 'C')
+      .where('P.id = :id', { id })
+      .leftJoinAndSelect('P.comments', 'C')
       .getOne();
 
     let isByMe = false;
-    if (board.userId === user.id) {
+    if (post.userId === user.id) {
       isByMe = true;
     }
-    return { isByMe, board };
+    return { isByMe, post };
   }
 
-  async getBoardByClassId(id: number, page: number): Promise<object> {
+  async getPostByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
 
-    const boardListNotice = await this.boardRepository
-      .createQueryBuilder('B')
-      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
-      .where('B.classid = :classid', { classid: classList.id })
-      .andWhere('B.boardType = :boardType', { boardType: 'Notice' })
+    const postListNotice = await this.postRepository
+      .createQueryBuilder('P')
+      .select(['P.id', 'P.title', 'P.author', 'P.postType', 'P.createdAt'])
+      .where('P.classid = :classid', { classid: classList.id })
+      .andWhere('P.postType = :postType', { postType: 'Notice' })
       .take(10)
       .getMany();
 
@@ -70,52 +74,58 @@ export class BoardsService {
     if (!page) {
       page = 1;
     }
-    const questionPage = 20 - boardListNotice.length;
+    const questionPage = 15 - postListNotice.length;
     const skipPage = questionPage * (page - 1);
-    const boardCountquestion = await this.boardRepository.count({
+    const postCountquestion = await this.postRepository.count({
       where: {
         class: classList,
-        boardType: 'Question',
+        postType: 'Question',
       },
     });
-    const pages = Math.ceil(boardCountquestion / questionPage);
-    const boardListquestion = await this.boardRepository
-      .createQueryBuilder('B')
-      .select(['B.id', 'B.title', 'B.writer', 'B.boardType', 'B.createdAt'])
-      .where('B.classid = :classid', { classid: classList.id })
-      .andWhere('B.boardType = :boardType', { boardType: 'Question' })
+    const pages = Math.ceil(postCountquestion / questionPage);
+    const postListquestion = await this.postRepository
+      .createQueryBuilder('P')
+      .select(['P.id', 'P.title', 'P.author', 'P.postType', 'P.createdAt'])
+      .where('P.classid = :classid', { classid: classList.id })
+      .andWhere('P.postType = :postType', { postType: 'Question' })
       .skip(skipPage)
       .take(questionPage)
       .getMany();
 
-    return { boardListNotice, boardListquestion, pages };
+    return { postListNotice, postListquestion, pages };
   }
 
-  async deleteBoard(id: number, user: User): Promise<object> {
-    const result = await this.boardRepository.delete({ id, user });
+  async deletePost(id: number, user: User): Promise<object> {
+    const result = await this.postRepository.delete({ id, user });
     if (result.affected === 0) {
       throw new NotFoundException('게시글 삭제 실패');
     }
     return { success: true, message: '게시글삭제성공' };
   }
 
-  async updateBoard(Dto, user: User, id: number): Promise<object> {
-    const { title, description, boardType } = Dto;
-    if (!(boardType in BoardTypes)) {
+  async updatePost(Dto, user: User, id: number): Promise<object> {
+    const { title, content, postType } = Dto;
+    if (!(postType in PostTypes)) {
       throw new BadRequestException('보드타입을 확인해주세요');
     }
-    const board = await this.boardRepository.findOne({ id, user });
-    board.title = title;
-    board.description = description;
-    board.boardType = boardType;
-    await this.boardRepository.save(board);
+    const post = await this.postRepository.findOne({ id, user });
+    if (!post) {
+      throw new BadRequestException('게시글이 없습니다');
+    }
+    post.title = title;
+    post.content = content;
+    post.postType = postType;
+    await this.postRepository.save(post);
 
     return { success: true, message: '게시글수정성공' };
   }
 
   async createComment(Dto, user: User, id): Promise<object> {
-    const board = await this.boardRepository.findOne({ id });
-    return this.commentRepository.createCommnet(Dto, user, board);
+    const post = await this.postRepository.findOne({ id });
+    if (!post) {
+      throw new BadRequestException('해당 게시글은 없습니다');
+    }
+    return this.commentRepository.createCommnet(Dto, user, post);
   }
 
   async deleteComment(id, user: User): Promise<object> {
@@ -127,9 +137,12 @@ export class BoardsService {
   }
 
   async updateComment(Dto, user: User, id: number): Promise<object> {
-    const { description } = Dto;
+    const { content } = Dto;
     const comment = await this.commentRepository.findOne({ id, user });
-    comment.description = description;
+    if (!comment) {
+      throw new BadRequestException('댓글이 없습니다');
+    }
+    comment.content = content;
     await this.commentRepository.save(comment);
 
     return { success: true, message: '댓글 수정 성공' };
@@ -143,7 +156,15 @@ export class BoardsService {
     return await this.todoRepository.find({ user });
   }
 
-  async updateTodo(id): Promise<object> {
+  async updateTodo(id, user, Dto) {
+    const todo = await this.todoRepository.findOne({ id, user });
+    const { content } = Dto;
+    todo.content = content;
+    await this.todoRepository.save(todo);
+    return { success: true, message: '할일 수정 성공' };
+  }
+
+  async updateTodoState(id): Promise<object> {
     const state = await this.todoRepository.findOne({ id });
     if (state.isComplete === false) {
       state.isComplete = true;

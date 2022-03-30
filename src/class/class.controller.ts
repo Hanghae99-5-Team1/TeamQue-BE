@@ -6,10 +6,11 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { GetUser } from 'src/auth/get-user.decorator';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { GetUser } from 'src/user/get-user.decorator';
+import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
 import { User } from 'src/entity/user.entity';
 import { ClassList } from '../entity/class.entity';
 import { ClassService } from './class.service';
@@ -25,19 +26,18 @@ import { UpdateDateDto } from './dto/update-date.dto';
 export class ClassController {
   constructor(private classService: ClassService) {}
   //내가 듣는 수업 날짜만 가져오기
-  //쿼리 교체
-  @Get('/date/all/:year/:month')
-  getClassDate(
-    @GetUser() user: User,
-    @Param('year') year: number,
-    @Param('month') month: number,
-  ) {
-    return this.classService.getAllClassDateByUser(user, year, month);
+  @Get('/date')
+  getClassDate(@GetUser() user: User, @Query() Query) {
+    return this.classService.getAllClassDateByUser(
+      user,
+      Query.year,
+      Query.month,
+    );
   }
   //지정클레스의 수업날짜 가져오기
   @Get('/date/:classid')
-  getclassdate(@Param('classid') id: number) {
-    return this.classService.getClassDate(id);
+  getclassdate(@Param('classid') id: number, @Query() Query) {
+    return this.classService.getClassDate(id, Query.year, Query.month);
   }
   //지정클레스의 수업날짜 작성 (클레스의 time:string도 변경)
   @Post('/date/:classid')
@@ -77,30 +77,25 @@ export class ClassController {
   createStudent(@Param('classid') id: number, @GetUser() user: User) {
     return this.classService.createStudent(id, user);
   }
-  //내가듣는 수업 가져오기
-  @Get('/student/class')
-  getClassInStudent(@GetUser() user: User) {
-    return this.classService.getClassInStudent(user);
-  }
   //특정클레스를 듣는 학생 가져오기
   @Get('/student/:classid')
   getUserInStudent(@Param('classid') id: number) {
     return this.classService.getUserInStudent(id);
   }
   //수강 취소
-  @Delete('/student/:studentid')
-  deleteStudent(@Param('studentid') id: number, @GetUser() user: User) {
+  @Delete('/student/:classid')
+  deleteStudent(@Param('classid') id: number, @GetUser() user: User) {
     return this.classService.deleteStudent(id, user);
   }
   //선생님의 수강신청 처리
-  @Put('/student/:studentid/:classid')
+  @Put('/student/:classid/:studentid')
   updateStudentState(
     @Param('studentid') studentid: number,
     @Param('classid') classid: number,
     @GetUser() user: User,
     @Body() Dto: StudentStateDto,
   ) {
-    return this.classService.updateStudentState(Dto, studentid, classid, user);
+    return this.classService.updateStudentState(Dto, classid, studentid, user);
   }
   //클레스만들기 (+ 클레스 일정)
   @Post('/')
@@ -111,15 +106,20 @@ export class ClassController {
     return this.classService.createClass(Dto, user);
   }
   //내가하는 수업정보 가져오기
-  @Get('/')
+  @Get('/teach')
   getClass(@GetUser() user: User): Promise<object> {
     return this.classService.getClass(user);
+  }
+  //내가듣는 수업 가져오기
+  @Get('/learn')
+  getClassInStudent(@GetUser() user: User) {
+    return this.classService.getClassInStudent(user);
   }
   //지정 클레스 정보 가져오기
   //Dto 확인
   @Get('/:classid')
-  getSelectedClass(@Param('classid') id: number, @Body() Dto): Promise<object> {
-    return this.classService.getSelectedClass(Dto, id);
+  getSelectedClass(@Param('classid') id: number): Promise<object> {
+    return this.classService.getSelectedClass(id);
   }
   //클레스 정보 수정(타이틀,url)
   @Put('/:classid')
