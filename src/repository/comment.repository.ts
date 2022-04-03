@@ -16,7 +16,6 @@ export class CommentRepository extends Repository<Comment> {
       content,
       user,
       post,
-      author: user.name,
     });
     await this.save(comment);
     return { success: true, message: '댓글작성성공' };

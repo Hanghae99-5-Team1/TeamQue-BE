@@ -10,6 +10,8 @@ import * as config from 'config';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 import { RefreshService } from './refresh.service';
 import { EmailService } from './email.service';
+import { AlarmRepository } from 'src/repository/alarm.repository';
+import { StudentRepository } from 'src/repository/student.repository';
 
 const jwtConfig = config.get('jwt');
 
@@ -22,7 +24,11 @@ const jwtConfig = config.get('jwt');
         expiresIn: jwtConfig.expiresIn,
       },
     }),
-    TypeOrmModule.forFeature([UserRepository]),
+    TypeOrmModule.forFeature([
+      UserRepository,
+      AlarmRepository,
+      StudentRepository,
+    ]),
   ],
   controllers: [UserController],
   providers: [

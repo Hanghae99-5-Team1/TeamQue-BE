@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,9 @@ import { ClassDateRepository } from '../repository/classDate.repository';
 import { StudentRepository } from '../repository/student.repository';
 import * as uuid from 'uuid';
 import { DateTime } from 'luxon';
+import { AlarmRepository } from 'src/repository/alarm.repository';
+import { UserRepository } from 'src/repository/user.repository';
+import { Connection } from 'typeorm';
 
 @Injectable()
 export class ClassService {
@@ -21,6 +25,11 @@ export class ClassService {
     private classdateRepository: ClassDateRepository,
     @InjectRepository(StudentRepository)
     private studentRepository: StudentRepository,
+    @InjectRepository(AlarmRepository)
+    private alarmRepository: AlarmRepository,
+    @InjectRepository(UserRepository)
+    private userRepository: UserRepository,
+    private connection: Connection,
   ) {}
 
   async findClassById(id: number): Promise<ClassList> {
@@ -34,18 +43,19 @@ export class ClassService {
         'C.id',
         'C.title',
         'C.timeTable',
-        'C.teacher',
         'C.imageUrl',
         'C.startDate',
         'C.endDate',
+        'U.name',
       ])
+      .leftJoin('C.user', 'U')
       .where('C.userid = :userid', { userid: user.id })
       .getMany();
     const mappingClasslist = classlist.map((data) => ({
       id: data.id,
       title: data.title,
       timeTable: data.timeTable.split('/').slice(0, -1),
-      teacher: data.teacher,
+      teacher: data.user.name,
       imageUrl: data.imageUrl,
       state: 'teach',
       progress:
@@ -58,26 +68,35 @@ export class ClassService {
     return mappingClasslist;
   }
 
-  async getSelectedClass(id): Promise<object> {
+  async getSelectedClass(id, user): Promise<object> {
     const selectedClass = await this.classlistRepository
       .createQueryBuilder('C')
       .select([
         'C.id',
         'C.title',
         'C.timeTable',
-        'C.teacher',
+        'U.name',
         'C.imageUrl',
         'C.createdAt',
+        'C.userId',
+        'C.uuid',
       ])
+      .leftJoin('C.user', 'U')
       .where('C.id = :id', { id })
       .getOne();
+    let isByMe = false;
+    if (selectedClass.userId === user.id) {
+      isByMe = true;
+    }
     return {
       id: selectedClass.id,
       title: selectedClass.title,
       timeTable: selectedClass.timeTable.split('/').slice(0, -1),
-      teacher: selectedClass.teacher,
+      teacher: selectedClass.user.name,
       imageUrl: selectedClass.imageUrl,
       createdAt: selectedClass.createdAt,
+      isByMe: isByMe,
+      uuid: selectedClass.uuid,
     };
   }
 
@@ -181,6 +200,7 @@ export class ClassService {
     classdate.year = year;
     classdate.month = month;
     classdate.day = day;
+    classdate.weekday = DateTime.local(year, month, day).weekday;
     classdate.startTime = startTime;
     classdate.endTime = endTime;
     await this.classdateRepository.save(classdate);
@@ -218,6 +238,9 @@ export class ClassService {
     const classlist = await this.classlistRepository.findOne({ uuid });
     if (!classlist) {
       throw new BadRequestException('강의가 없습니다');
+    }
+    if (classlist.userId === user.id) {
+      throw new BadRequestException('가르치는 강의의 수강신청은 불가합니다');
     }
     const findExist = await this.studentRepository.findOne({
       user,
@@ -257,7 +280,7 @@ export class ClassService {
       .select([
         'C.id',
         'C.title',
-        'C.teacher',
+        'U.name',
         'C.timeTable',
         'C.imageUrl',
         'S.state',
@@ -265,13 +288,14 @@ export class ClassService {
         'C.endDate',
       ])
       .leftJoin('C.students', 'S')
+      .leftJoin('C.user', 'U')
       .where('S.userid = :userid', { userid: user.id })
       .orderBy('S.state', 'ASC')
       .getMany();
     const mappingStudent = student.map((data) => ({
       id: data.id,
       title: data.title,
-      teacher: data.teacher,
+      teacher: data.user.name,
       timeTable: data.timeTable.split('/').slice(0, -1),
       imageUrl: data.imageUrl,
       state: data.students[0].state,
@@ -292,22 +316,48 @@ export class ClassService {
     }
     return { success: true, message: '수강 취소 성공' };
   }
-  async updateStudentState(Dto, classid, studentid, user) {
+  async updateStudentState(Dto, classid, userid, user) {
     const { isOk } = Dto;
     const teachClass = await this.classlistRepository.findOne({
       user,
       id: classid,
     });
     const studentlist = await this.studentRepository.findOne({
-      id: studentid,
-      class: teachClass,
+      userId: userid,
+      classId: teachClass.id,
     });
     if (isOk == true) {
-      studentlist.state = 'accepted';
+      const queryRunner = this.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        studentlist.state = 'accepted';
+        const student = await this.userRepository.findOne({ id: userid });
+        const sendalarm = `${teachClass.title} 수강신청이 수락되었습니다.`;
+        await this.alarmRepository.createAlarm(student, sendalarm);
+        await this.studentRepository.save(studentlist);
+      } catch (e) {
+        await queryRunner.rollbackTransaction();
+        throw new ConflictException({ message: '처리실패 다시시도해주세요' });
+      } finally {
+        await queryRunner.release();
+      }
     } else {
-      studentlist.state = 'rejected';
+      const queryRunner = this.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        await this.studentRepository.delete({ id: studentlist.id });
+        const student = await this.userRepository.findOne({ id: userid });
+        const sendalarm = `${teachClass.title} 수강신청이 거절되었습니다.`;
+        await this.alarmRepository.createAlarm(student, sendalarm);
+      } catch (e) {
+        await queryRunner.rollbackTransaction();
+        throw new ConflictException({ message: '처리실패 다시시도해주세요' });
+      } finally {
+        await queryRunner.release();
+      }
     }
-    await this.studentRepository.save(studentlist);
     return { success: true, message: '수강신청 처리성공' };
   }
 }
