@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   BaseEntity,
   Column,
@@ -9,27 +10,35 @@ import { ClassList } from './class.entity';
 
 @Entity()
 export class ClassDate extends BaseEntity {
+  @ApiProperty({ type: Number, description: 'classDate_id' })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ type: Number, description: 'year' })
   @Column()
   year: number;
 
+  @ApiProperty({ type: Number, description: 'month' })
   @Column()
   month: number;
 
+  @ApiProperty({ type: Number, description: 'day' })
   @Column()
   day: number;
 
+  @ApiProperty({ type: String, description: 'startTime' })
   @Column()
   startTime: string;
 
+  @ApiProperty({ type: String, description: 'endTime' })
   @Column()
   endTime: string;
 
+  @ApiProperty({ type: Number, description: 'weekday' })
   @Column()
   weekday: number;
 
+  @ApiProperty({ type: Number, description: 'classId' })
   @Column({ nullable: true })
   classId: number;
 

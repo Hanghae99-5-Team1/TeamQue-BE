@@ -1,5 +1,5 @@
 import { User } from 'src/entity/user.entity';
-import { Board } from 'src/entity/board.entity';
+import { Post } from 'src/entity/post.entity';
 import {
   BaseEntity,
   Column,
@@ -12,49 +12,63 @@ import {
 } from 'typeorm';
 import { ClassDate } from './classDate.entity';
 import { Student } from './student.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class ClassList extends BaseEntity {
+  @ApiProperty({ type: Number, description: 'class_id' })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ type: String, description: 'title' })
   @Column()
   title: string;
 
+  @ApiProperty({ type: String, description: 'timeTable' })
   @Column()
-  time: string;
+  timeTable: string;
 
-  @Column()
-  teacher: string;
-
+  @ApiProperty({ type: String, description: 'startDate' })
   @Column()
   startDate: string;
 
+  @ApiProperty({ type: String, description: 'endDate' })
   @Column()
   endDate: string;
 
+  @ApiProperty({ type: String, description: 'imageUrl' })
   @Column({ type: 'text', nullable: true })
   imageUrl: string;
 
+  @ApiProperty({ type: String, description: 'uuid' })
   @Column()
   uuid: string;
 
+  @ApiProperty({ type: Number, description: 'userId' })
   @Column({ nullable: true })
   userId: number;
 
+  @ApiProperty({ type: Date, description: 'createdAt' })
   @CreateDateColumn()
   createdAt: Date;
 
+  @ApiProperty({ type: Date, description: 'updatedAt' })
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany((type) => Student, (student) => student.class)
+  @OneToMany((type) => Student, (student) => student.class, {
+    cascade: true,
+  })
   students: Student[];
 
-  @OneToMany((type) => Board, (board) => board.class)
-  boards: Board[];
+  @OneToMany((type) => Post, (post) => post.class, {
+    cascade: true,
+  })
+  posts: Post[];
 
-  @OneToMany((type) => ClassDate, (classdate) => classdate.class)
+  @OneToMany((type) => ClassDate, (classdate) => classdate.class, {
+    cascade: true,
+  })
   classdates: ClassDate[];
 
   @ManyToOne((type) => User, (user) => user.classes, { onDelete: 'CASCADE' })

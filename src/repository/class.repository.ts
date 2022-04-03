@@ -7,20 +7,19 @@ import { ClassList } from '../entity/class.entity';
 export class ClassListRepository extends Repository<ClassList> {
   async createClass(Dto, user: User, unique): Promise<object> {
     const { title, times, imageUrl, startDate, endDate } = Dto;
-    let time = '';
+    let timeTable = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
       const { day, startTime, endTime } = weekday;
-      time += `${days[day - 1]} ${startTime}~${endTime}/`;
+      timeTable += `${days[day - 1]} [${startTime}~${endTime}]/`;
     }
-    if (!time) {
+    if (!timeTable) {
       throw new BadRequestException('수업일을 설정해주세요');
     }
     const classlist = this.create({
       user,
       title,
-      time,
-      teacher: user.userName,
+      timeTable,
       imageUrl,
       uuid: unique,
       startDate,

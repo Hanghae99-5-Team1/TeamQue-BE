@@ -8,25 +8,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ChatService } from './chat.service';
-
-const chatType = {
-  common: 1,
-  question: 2,
-} as const;
-
-const userState = {
-  disconnect: 1,
-  connect: 2,
-  correct: 3,
-  incorrect: 4,
-  question: 5,
-} as const;
-
-type chatType = typeof chatType[keyof typeof chatType];
-type userState = typeof userState[keyof typeof userState];
+import { chatType, stateType } from './chat.interface';
+import { User } from 'src/entity/user.entity';
 
 @WebSocketGateway({
   cors: {
@@ -34,81 +20,75 @@ type userState = typeof userState[keyof typeof userState];
   },
 })
 export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
-  @Inject()
-  private chatService: ChatService;
-
   @WebSocketServer()
   server: Server;
 
-  @SubscribeMessage('init')
-  handleNickname(
-    @ConnectedSocket()
-    client: Socket,
-    @MessageBody()
-    data: {
-      nickname: string;
-      token: string;
-    },
-  ): object {
-    // 인증절차 필요함
-    // if (tokenIsNotValidate === true) {
-    //   client.disconnect(true);
-    //   return;
-    // }
+  constructor(private chatService: ChatService) {}
 
-    Logger.debug(`init / ${data.nickname}으로 설정됐습니다.`);
-    client.data.nickname = data.nickname;
-    client.emit('initOk');
-
-    return {};
-  }
+  private connectUsers = new Map<string, Map<number, object>>();
 
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @ConnectedSocket()
     client: Socket,
-    @MessageBody('classId')
-    classId: number,
+    @MessageBody()
+    payload: {
+      classId: number;
+    },
   ): Promise<object> {
-    const nickname = client.data.nickname;
+    const { userId } = client.data;
+    const { classId } = payload;
+    const strClassId = String(payload.classId);
 
-    if (classId === null || classId === undefined) {
-      Logger.debug(`${nickname} / joinRoom / 인자가 없습니다.`);
+    client.data.classId = classId;
+
+    const result = await this.chatService.isStudent(classId, userId);
+    if (!result) {
+      Logger.debug(`${userId}학생은 ${classId}반이 아닙니다.`);
       client.disconnect(true);
-      return;
+      return {};
     }
 
-    client.join(String(classId));
-    client.broadcast
-      .to(String(classId))
-      .emit('joinUser', { nickname, state: userState.connect });
-    client.data.state = userState.connect;
+    const chatList = await this.chatService.findQuestion(
+      classId,
+      chatType.question,
+    );
 
-    Logger.debug(`joinRoom / ${nickname}님이 ${classId}에 입장했습니다.`);
+    const userList = await this.chatService.countStudentsInClass(classId);
+
+    if (this.connectUsers.has(strClassId)) {
+      const room = this.connectUsers.get(strClassId);
+
+      if (room.size !== userList[1]) {
+        userList[0].forEach(({ userId, name }) => {
+          if (!room.has(userId)) {
+            room.set(userId, { name, state: stateType.disconnect });
+          }
+        });
+      }
+    } else {
+      this.connectUsers.set(strClassId, new Map<number, object>());
+      userList[0].forEach(({ userId, name }) => {
+        this.connectUsers
+          .get(strClassId)
+          .set(userId, { name, state: stateType.disconnect });
+      });
+    }
+
+    client.join(strClassId);
+    client.broadcast.to(strClassId).emit('joinUser', { userId });
+
+    Logger.debug(`joinRoom / ${userId}님이 ${classId}에 입장했습니다.`);
     console.log(this.server.sockets.adapter.rooms);
 
-    const chatList = this.chatService.findAllChatLog(classId);
+    this.connectUsers.get(strClassId).get(userId)['state'] = stateType.connect;
 
-    // 유저 리스트를 긁어서 보내줘야함 -> 접속한 사람을 room에서 보내줘야한다.
-    const userList = this.chatService.findStudents(classId);
-    const connectUsers = [];
-    const sockets = await this.server.in(String(classId)).fetchSockets();
+    console.log(this.connectUsers.get(strClassId), chatList);
 
-    sockets.forEach((s) => {
-      connectUsers.push({ nickname: s.data.nickname, state: s.data.state });
-    });
-
-    // DB에서 찾은 학생목록과 지금 접속한 사람의 이름을 비교해 상태를 업데이트 한 후
-    // FE에게 보내줘야한다.
-
-    const dummy = [
-      { nickname: '공정용', state: userState.disconnect },
-      { nickname: '조상현부캐', state: userState.disconnect },
-      { nickname: '문성현', state: userState.disconnect },
-      { nickname: '조상현', state: userState.disconnect },
-    ];
-
-    return { nickname, userList: dummy, chatList, connectUsers };
+    return {
+      userList: Object.fromEntries(this.connectUsers.get(strClassId)),
+      chatList: chatList.slice(0, 9),
+    };
   }
 
   @SubscribeMessage('leaveRoom')
@@ -116,14 +96,19 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket()
     client: Socket,
     @MessageBody('classId')
-    classId: string,
+    classId: number,
   ): object {
-    const nickname = client.data.nickname;
+    const userId = client.data.userId;
+    const strClassId = String(classId);
 
-    client.leave(classId);
-    client.broadcast.to(classId).emit('leaveUser', nickname);
+    client.leave(strClassId);
+    client.broadcast.to(strClassId).emit('leaveUser', userId);
+    client.data.classId = undefined;
 
-    Logger.debug(`leaveRoom / ${nickname}님이 ${classId}에서 퇴장했습니다.`);
+    this.connectUsers.get(strClassId).get(client.data.userId)['state'] =
+      stateType.disconnect;
+
+    Logger.debug(`leaveRoom / ${userId}님이 ${classId}에서 퇴장했습니다.`);
     console.log(this.server.sockets.adapter.rooms);
     return {};
   }
@@ -135,27 +120,34 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: {
       classId: number;
-      message: string;
+      content: string;
     },
   ): object {
-    const nickname = client.data.nickname;
-    const { classId, message } = data;
+    const { userId, name } = client.data;
+    const { classId, content } = data;
     const id = uuid();
 
-    Logger.debug(`sendChat / (room: ${classId}) ${nickname} : ${message}`);
+    Logger.debug(`sendChat / (room: ${classId}) ${userId} : ${content}`);
 
-    if (nickname === undefined || classId === undefined) {
+    if (userId === undefined || classId === undefined) {
       client.disconnect(true);
       Logger.debug(`닉네임 설정이 안 돼있네요. 아니면 방에 들어가질 않았어요.`);
       return;
     }
 
-    this.chatService.saveChat(classId, nickname, message, id, chatType.common);
+    this.chatService.saveChat(
+      classId,
+      userId,
+      name,
+      content,
+      id,
+      chatType.common,
+    );
 
     client.broadcast
       .to(String(classId))
-      .emit('receiveChat', { id, message, nickname });
-    return { id, message };
+      .emit('receiveChat', { chatId: id, content, userId, name });
+    return { chatId: id, content };
   }
 
   @SubscribeMessage('sendQuestion')
@@ -165,16 +157,17 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: {
       classId: number;
-      message: string;
+      content: string;
     },
   ): object {
-    const nickname = client.data.nickname;
-    const { classId, message } = data;
+    const userId: number = client.data.userId;
+    const name: string = client.data.name;
+    const { classId, content } = data;
     const id = uuid();
 
-    Logger.debug(`sendQuestion / (room: ${classId}) ${nickname} : ${message}`);
+    Logger.debug(`sendQuestion / (room: ${classId}) ${userId} : ${content}`);
 
-    if (nickname === undefined || classId === undefined) {
+    if (userId === undefined || classId === undefined) {
       client.disconnect(true);
       Logger.debug(`닉네임 설정이 안 돼있네요. 아니면 방에 들어가질 않았어요.`);
       return;
@@ -182,23 +175,25 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.chatService.saveChat(
       classId,
-      nickname,
-      message,
+      userId,
+      name,
+      content,
       id,
       chatType.question,
     );
 
     client.broadcast.to(String(classId)).emit('receiveQuestion', {
-      id,
-      message,
-      nickname,
+      chatId: id,
+      content,
+      userId,
+      name,
     });
 
-    return { id, message };
+    return { chatId: id, content };
   }
 
-  @SubscribeMessage('sendResolved')
-  handleQuestionSolve(
+  @SubscribeMessage('sendDelete')
+  async handleDeleteChat(
     @ConnectedSocket()
     client: Socket,
     @MessageBody()
@@ -206,19 +201,48 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       classId: number;
       chatId: string;
     },
-  ): object {
+  ): Promise<object> {
     const { classId, chatId } = data;
-    const nickname = client.data.nickname;
+    const result = await this.chatService.deleteChat(chatId);
 
-    const isWriter = this.chatService.checkWriter(classId, nickname, chatId);
+    if (!result) {
+      client.disconnect(true);
+      Logger.debug(`없는 질문을 지웠어요. ${classId} / ${chatId}`);
+      return {};
+    }
+
+    client.broadcast.to(String(classId)).emit('receiveDelete', { chatId });
+    return { chatId };
+  }
+
+  @SubscribeMessage('sendResolved')
+  async handleQuestionSolved(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    data: {
+      classId: number;
+      chatId: string;
+    },
+  ): Promise<object> {
+    const { classId, chatId } = data;
+    const { userId } = client.data;
+
+    const isWriter = await this.chatService.toggleResolved(
+      classId,
+      userId,
+      chatId,
+    );
+
     if (!isWriter) {
+      Logger.debug(`방 ${classId} / ${userId}는 ${chatId}작성자가 아닌데요?`);
       client.disconnect(true);
       return;
     }
     Logger.debug(`sendResolved/ ${chatId}`);
 
     client.broadcast.to(String(classId)).emit('receiveResolved', { chatId });
-    return {};
+    return { success: 'true' };
   }
 
   @SubscribeMessage('reportUser')
@@ -227,11 +251,77 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     client: Socket,
     @MessageBody()
     data: {
-      nickname: string;
+      userId: number;
     },
   ): object {
-    // 데이터베이스에 저장
-    // 신고 기능
+    const { userId } = data;
+    this.chatService.reportUser(userId);
+
+    Logger.debug(`reportUser / ${userId} is reported`);
+    return {};
+  }
+
+  @SubscribeMessage('sendLikeUp')
+  async handleLikeUp(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    payload: {
+      classId: number;
+      chatId: string;
+    },
+  ): Promise<object | void> {
+    const { name, userId } = client.data;
+    const { classId, chatId } = payload;
+
+    Logger.debug(
+      `sendLikeUp / (room: ${classId}), ${chatId}, ${name} , ${userId}`,
+    );
+
+    const result = await this.chatService.likeUp(userId, classId, chatId);
+    if (!result) {
+      Logger.debug(
+        `강제로 ${userId}가 끊겼습니다. 이미 올렸거나 잘못된 요청입니다.`,
+      );
+      client.disconnect(true);
+      return;
+    }
+
+    client.broadcast
+      .to(String(classId))
+      .emit('receiveLikeUp', { userId, name, chatId });
+    return {};
+  }
+
+  @SubscribeMessage('sendLikeDown')
+  async handleLikeDown(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    payload: {
+      classId: number;
+      chatId: string;
+    },
+  ): Promise<object> {
+    const { name, userId } = client.data;
+    const { classId, chatId } = payload;
+
+    Logger.debug(
+      `sendLikeDown / (room: ${classId}), ${chatId}, ${name} , ${userId}`,
+    );
+
+    const result = await this.chatService.likeDown(userId, classId, chatId);
+    if (!result) {
+      Logger.debug(
+        `강제로 ${userId}가 끊겼습니다. 이미 내렸거나 잘못된 요청입니다.`,
+      );
+      client.disconnect(true);
+      return;
+    }
+
+    client.broadcast
+      .to(String(classId))
+      .emit('receiveLikeDown', { userId, name, chatId });
     return {};
   }
 
@@ -242,27 +332,57 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     data: {
       classId: number;
-      state: number;
+      state: stateType;
     },
   ): object {
     const { classId, state } = data;
-    const nickname = client.data.nickname;
+    const userId = client.data.userId;
 
-    client.data.state = state;
+    this.connectUsers.get(String(classId)).get(client.data.userId)['state'] =
+      state;
+
     client.broadcast
       .to(String(classId))
-      .emit('changeState', { nickname, state });
-    Logger.debug(`changeMyState / ${nickname}이/가 ${state}로 변경`);
+      .emit('changeState', { userId: client.data.userId, state });
+    Logger.debug(`changeMyState / ${userId}이/가 ${state}로 변경`);
+
+    console.log(this.connectUsers.get(String(classId)));
     return {};
   }
 
-  handleConnection(@ConnectedSocket() client: Socket): void {
-    Logger.debug(`${client.id}이 들어왔어요.`);
+  async handleConnection(@ConnectedSocket() client: Socket): Promise<void> {
+    const user: User = await this.chatService.verify(
+      client.handshake.headers.authorization,
+    );
+
+    if (user === null) {
+      client.disconnect(true);
+      Logger.debug(`유효하지 않은 토큰입니다.`);
+      return;
+    }
+
+    client.data.userId = user.id;
+    client.data.name = user.name;
+
+    Logger.debug(`${client.data.userId}/${client.data.name}이 들어왔어요.`);
     return;
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket): void {
-    Logger.debug(`${client.data.nickname}이 떠났어요.`);
+    const { userId, classId } = client.data;
+
+    if (classId === undefined) {
+      Logger.debug(`Disconnect / user:${userId}`);
+      return;
+    }
+    const room = this.connectUsers.get(String(classId));
+    if (room !== undefined) {
+      room.get(userId)['state'] = stateType.disconnect;
+    }
+
+    this.server.to(String(classId)).emit('leaveUser', { userId });
+
+    Logger.debug(`Disconnect / Data : ${userId}, ${classId}`);
     return;
   }
 }

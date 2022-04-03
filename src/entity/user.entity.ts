@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { Board } from 'src/entity/board.entity';
+import { Post } from 'src/entity/post.entity';
 import { Comment } from 'src/entity/comment.entity';
 import { Todo } from 'src/entity/todo.entity';
 import { ClassList } from 'src/entity/class.entity';
@@ -14,50 +14,68 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+import { Alarm } from './alarm.entity';
 
 @Entity()
-@Unique(['userEmail'])
+@Unique(['email'])
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
+  @ApiProperty({ type: Number, description: 'user_id' })
+  @PrimaryGeneratedColumn() //uuid??
   id: number;
 
+  @ApiProperty({ type: String, description: 'name' })
   @Column()
-  userName: string;
+  name: string;
 
+  @ApiProperty({ type: String, description: 'password' })
   @Column({ nullable: true, default: null })
   password: string;
 
+  @ApiProperty({ type: String, description: 'email' })
   @Column()
-  userEmail: string;
+  email: string;
 
+  @ApiProperty({ type: String, description: 'provider' })
   @Column({ nullable: true })
   provider: string;
 
-  @Column({ default: '배움은 끝이 없다.', nullable: true })
-  oneword: string;
-
-  @Column({ nullable: true })
+  @ApiProperty({ type: String, description: 'currentHashedRefreshToken' })
+  @Column({ nullable: true, default: null })
   @Exclude()
   currentHashedRefreshToken?: string;
 
+  @ApiProperty({ type: Date, description: 'createdAt' })
   @CreateDateColumn()
   createdAt: Date;
 
+  @ApiProperty({ type: Date, description: 'updatedAt' })
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany((type) => Board, (board) => board.user)
-  boards: Board[];
+  @OneToMany((type) => Post, (post) => post.user)
+  posts: Post[];
 
   @OneToMany((type) => Todo, (todo) => todo.user)
   todos: Todo[];
 
-  @OneToMany((type) => ClassList, (classlist) => classlist.user)
+  @OneToMany((type) => ClassList, (classlist) => classlist.user, {
+    cascade: true,
+  })
   classes: ClassList[];
 
-  @OneToMany((type) => Student, (student) => student.user)
+  @OneToMany((type) => Student, (student) => student.user, {
+    cascade: true,
+  })
   studnets: Student[];
 
-  @OneToMany((type) => Comment, (comment) => comment.user)
+  @OneToMany((type) => Comment, (comment) => comment.user, {
+    cascade: true,
+  })
   comments: Comment[];
+
+  @OneToMany((type) => Alarm, (alarm) => alarm.user, {
+    cascade: true,
+  })
+  alarms: Alarm[];
 }

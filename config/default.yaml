@@ -1,10 +1,10 @@
 server:
   port: 3000
 
-db:
-  type: 'mysql'
-  port: 3307
-  database: 'test'
+# db:
+#   type: 'mysql'
+#   port: 3307
+#   database: 'test'
 
 jwt:
   expiresIn: 3600
@@ -15,10 +15,15 @@ refresh:
 
 kakao:
   client_id: '2161226dcbb0f02963a2cdb86da38d87'
-  redirect_uri: 'http://localhost:3000/auth/kakao/callback'
+  redirect_uri: 'https://noobpro.shop/user/kakao/callback'
   client_secret: 'ewgnhf8Sjs4WoBkhSlfEbrHe3G8CKc8m'
 
 email:
   user: 'whwhssk'
   pass: 'wkisrflnqnthpttj'
-  baseUrl: 'http://13.124.123.143:3000'
+  baseUrl: 'https://noobpro.shop'
+
+google:
+  client_id: '204198162536-ojda3a1qhtbrlt039moiumosc36ja245.apps.googleusercontent.com'
+  redirect_uri: 'https://noobpro.shop/user/google/callback'
+  client_secret: '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'

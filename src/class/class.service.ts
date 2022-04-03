@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entity/user.entity';
 import { ClassList } from '../entity/class.entity';
@@ -7,6 +12,9 @@ import { ClassDateRepository } from '../repository/classDate.repository';
 import { StudentRepository } from '../repository/student.repository';
 import * as uuid from 'uuid';
 import { DateTime } from 'luxon';
+import { AlarmRepository } from 'src/repository/alarm.repository';
+import { UserRepository } from 'src/repository/user.repository';
+import { Connection } from 'typeorm';
 
 @Injectable()
 export class ClassService {
@@ -17,6 +25,11 @@ export class ClassService {
     private classdateRepository: ClassDateRepository,
     @InjectRepository(StudentRepository)
     private studentRepository: StudentRepository,
+    @InjectRepository(AlarmRepository)
+    private alarmRepository: AlarmRepository,
+    @InjectRepository(UserRepository)
+    private userRepository: UserRepository,
+    private connection: Connection,
   ) {}
 
   async findClassById(id: number): Promise<ClassList> {
@@ -29,19 +42,20 @@ export class ClassService {
       .select([
         'C.id',
         'C.title',
-        'C.time',
-        'C.teacher',
+        'C.timeTable',
         'C.imageUrl',
         'C.startDate',
         'C.endDate',
+        'U.name',
       ])
+      .leftJoin('C.user', 'U')
       .where('C.userid = :userid', { userid: user.id })
       .getMany();
     const mappingClasslist = classlist.map((data) => ({
       id: data.id,
       title: data.title,
-      time: data.time.split('/').slice(0, -1),
-      teacher: data.teacher,
+      timeTable: data.timeTable.split('/').slice(0, -1),
+      teacher: data.user.name,
       imageUrl: data.imageUrl,
       state: 'teach',
       progress:
@@ -54,21 +68,36 @@ export class ClassService {
     return mappingClasslist;
   }
 
-  async getSelectedClass(Dto, id): Promise<object> {
-    // const { year, month } = Dto;
-    return await this.classlistRepository
+  async getSelectedClass(id, user): Promise<object> {
+    const selectedClass = await this.classlistRepository
       .createQueryBuilder('C')
       .select([
         'C.id',
         'C.title',
-        'C.time',
-        'C.teacher',
+        'C.timeTable',
+        'U.name',
         'C.imageUrl',
         'C.createdAt',
+        'C.userId',
+        'C.uuid',
       ])
-      .leftJoinAndSelect('C.classdates', 'D')
+      .leftJoin('C.user', 'U')
       .where('C.id = :id', { id })
       .getOne();
+    let isByMe = false;
+    if (selectedClass.userId === user.id) {
+      isByMe = true;
+    }
+    return {
+      id: selectedClass.id,
+      title: selectedClass.title,
+      timeTable: selectedClass.timeTable.split('/').slice(0, -1),
+      teacher: selectedClass.user.name,
+      imageUrl: selectedClass.imageUrl,
+      createdAt: selectedClass.createdAt,
+      isByMe: isByMe,
+      uuid: selectedClass.uuid,
+    };
   }
 
   async createClass(Dto, user: User): Promise<object> {
@@ -98,10 +127,25 @@ export class ClassService {
     return { success: true, message: '클레스 삭제 성공' };
   }
 
-  async getClassDate(id) {
+  async getClassDate(id, year, month) {
     const classlist = await this.classlistRepository.findOne({ id });
-    const classdate = await this.classdateRepository.find({ class: classlist });
-    return classdate;
+    const classdate = await this.classdateRepository
+      .createQueryBuilder('D')
+      .select(['D.day', 'D.startTime', 'D.endTime', 'C.title'])
+      .leftJoin('D.class', 'C')
+      .where('D.classid = :classid', { classid: classlist.id })
+      .andWhere('D.year = :year', { year })
+      .andWhere('D.month = :month', { month })
+      .orderBy('D.day', 'ASC')
+      .getMany();
+
+    const mappingClassdate = classdate.map((data) => ({
+      day: data.day,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      title: data.class.title,
+    }));
+    return mappingClassdate;
   }
 
   async getAllClassDateByUser(user, year, month) {
@@ -127,15 +171,19 @@ export class ClassService {
   async createClassDate(Dto, id, user: User) {
     const { times, startDate, endDate } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
-    let time = '';
+    let timeTable = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
       const { day, startTime, endTime } = weekday;
-      time += `${days[day - 1]} ${startTime}~${endTime}/`;
+      timeTable += `${days[day - 1]} [${startTime}~${endTime}]/`;
+    }
+    if (!timeTable) {
+      throw new BadRequestException('수업일을 설정해주세요');
     }
     classlist.startDate = startDate;
     classlist.endDate = endDate;
-    classlist.time = time;
+    classlist.timeTable = timeTable;
+    await this.classlistRepository.save(classlist);
     return this.classdateRepository.createClassDate(Dto, classlist);
   }
 
@@ -152,6 +200,7 @@ export class ClassService {
     classdate.year = year;
     classdate.month = month;
     classdate.day = day;
+    classdate.weekday = DateTime.local(year, month, day).weekday;
     classdate.startTime = startTime;
     classdate.endTime = endTime;
     await this.classdateRepository.save(classdate);
@@ -184,15 +233,46 @@ export class ClassService {
     return { success: true, message: '클레스 달력 전부 삭제 성공' };
   }
 
-  async createStudent(id, user: User) {
-    const classlist = await this.classlistRepository.findOne({ id });
+  async createStudent(Dto, user: User) {
+    const { uuid } = Dto;
+    const classlist = await this.classlistRepository.findOne({ uuid });
+    if (!classlist) {
+      throw new BadRequestException('강의가 없습니다');
+    }
+    if (classlist.userId === user.id) {
+      throw new BadRequestException('가르치는 강의의 수강신청은 불가합니다');
+    }
+    const findExist = await this.studentRepository.findOne({
+      user,
+      classId: classlist.id,
+    });
+    if (findExist) {
+      throw new BadRequestException('이미 신청한 강의입니다');
+    }
     return this.studentRepository.createStudent(classlist, user);
   }
 
   async getUserInStudent(id) {
     const classlist = await this.classlistRepository.findOne({ id });
-    return await this.studentRepository.find({ class: classlist });
+    return await this.studentRepository
+      .createQueryBuilder('S')
+      .select(['S.state', 'S.name', 'S.userId'])
+      .where('S.classid = :classid', { classid: classlist.id })
+      .orderBy('S.name', 'ASC')
+      .orderBy('S.state', 'ASC')
+      .getMany();
   }
+
+  // .andWhere('S.state IN (:...state)', { state: ['wait', 'accepted'] })
+
+  // .andWhere(
+  //   new Brackets((qb) => {
+  //     qb.where('S.state = :state', { state: 'wait' }).orWhere(
+  //       'S.state = :state',
+  //       { state: 'accepted' },
+  //     );
+  //   }),
+  // )
 
   async getClassInStudent(user: User) {
     const student = await this.classlistRepository
@@ -200,22 +280,23 @@ export class ClassService {
       .select([
         'C.id',
         'C.title',
-        'C.teacher',
-        'C.time',
+        'U.name',
+        'C.timeTable',
         'C.imageUrl',
         'S.state',
         'C.startDate',
         'C.endDate',
       ])
       .leftJoin('C.students', 'S')
+      .leftJoin('C.user', 'U')
       .where('S.userid = :userid', { userid: user.id })
       .orderBy('S.state', 'ASC')
       .getMany();
     const mappingStudent = student.map((data) => ({
       id: data.id,
       title: data.title,
-      teacher: data.teacher,
-      time: data.time.split('/').slice(0, -1),
+      teacher: data.user.name,
+      timeTable: data.timeTable.split('/').slice(0, -1),
       imageUrl: data.imageUrl,
       state: data.students[0].state,
       progress:
@@ -229,28 +310,54 @@ export class ClassService {
   }
 
   async deleteStudent(id, user: User) {
-    const result = await this.studentRepository.delete({ id, user });
+    const result = await this.studentRepository.delete({ classId: id, user });
     if (result.affected === 0) {
       throw new NotFoundException('수강 취소 실패');
     }
     return { success: true, message: '수강 취소 성공' };
   }
-  async updateStudentState(Dto, studentid, classid, user) {
+  async updateStudentState(Dto, classid, userid, user) {
     const { isOk } = Dto;
-    const classlist = await this.studentRepository.findOne({
-      id: classid,
+    const teachClass = await this.classlistRepository.findOne({
       user,
+      id: classid,
     });
     const studentlist = await this.studentRepository.findOne({
-      id: studentid,
-      class: classlist,
+      userId: userid,
+      classId: teachClass.id,
     });
     if (isOk == true) {
-      studentlist.state = 'accepted';
+      const queryRunner = this.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        studentlist.state = 'accepted';
+        const student = await this.userRepository.findOne({ id: userid });
+        const sendalarm = `${teachClass.title} 수강신청이 수락되었습니다.`;
+        await this.alarmRepository.createAlarm(student, sendalarm);
+        await this.studentRepository.save(studentlist);
+      } catch (e) {
+        await queryRunner.rollbackTransaction();
+        throw new ConflictException({ message: '처리실패 다시시도해주세요' });
+      } finally {
+        await queryRunner.release();
+      }
     } else {
-      studentlist.state = 'rejected';
+      const queryRunner = this.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        await this.studentRepository.delete({ id: studentlist.id });
+        const student = await this.userRepository.findOne({ id: userid });
+        const sendalarm = `${teachClass.title} 수강신청이 거절되었습니다.`;
+        await this.alarmRepository.createAlarm(student, sendalarm);
+      } catch (e) {
+        await queryRunner.rollbackTransaction();
+        throw new ConflictException({ message: '처리실패 다시시도해주세요' });
+      } finally {
+        await queryRunner.release();
+      }
     }
-    await this.studentRepository.save(studentlist);
     return { success: true, message: '수강신청 처리성공' };
   }
 }

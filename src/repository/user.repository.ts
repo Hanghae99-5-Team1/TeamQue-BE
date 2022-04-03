@@ -9,8 +9,8 @@ import * as bcrypt from 'bcryptjs';
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
   async createUser(
-    userEmail,
-    userName,
+    email,
+    name,
     provider?: string,
     password?: string,
     VerifyToken?: string,
@@ -21,16 +21,15 @@ export class UserRepository extends Repository<User> {
       hashedPassword = await bcrypt.hash(password, salt);
     }
     const user = this.create({
-      userEmail,
-      userName,
+      email,
+      name,
       provider,
       password: hashedPassword,
       currentHashedRefreshToken: VerifyToken,
     });
     try {
       await this.save(user);
-      const theUser = this.findOne({ userName, userEmail });
-      return theUser['id'];
+      return user['id'];
     } catch (error) {
       console.log(error);
       if (error.code === 'ER_DUP_ENTRY') {
