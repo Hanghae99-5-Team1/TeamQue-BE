@@ -110,7 +110,7 @@ export class ChatService {
 
   async findStudents(classId: number): Promise<Student[]> {
     return await this.studentRepository.find({
-      select: ['userId', 'name'],
+      select: ['userId'],
       where: { classId },
     });
   }
@@ -179,16 +179,17 @@ export class ChatService {
   }
 
   async countStudentsInClass(classId: number): Promise<object> {
-    return await this.studentRepository.findAndCount({
-      select: ['userId', 'name'],
-      where: { classId },
-    });
+    return await this.studentRepository
+      .createQueryBuilder('S')
+      .select(['S.userId', 'U.name'])
+      .leftJoin('S.user', 'U')
+      .where('S.classId =:classId', { classId })
+      .getManyAndCount();
 
-    // .createQueryBuilder('S')
-    //   .select(['S.userId', 'U.name'])
-    //   .leftJoin('S.user', 'U')
-    //   .where('S.classId =:classId', { classId })
-    //   .getManyAndCount();
+    // .findAndCount({
+    //   select: ['userId', 'name'],
+    //   where: { classId },
+    // });
   }
 
   reportUser(userId: number): void {

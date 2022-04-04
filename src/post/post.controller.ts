@@ -143,7 +143,7 @@ export class PostController {
   })
   @ApiOkResponse({ description: '댓글 삭제' })
   deleteComment(
-    @Param('commnetid') id: number,
+    @Param('commentid') id: number,
     @GetUser() user: User,
   ): Promise<object> {
     return this.postService.deleteComment(id, user);

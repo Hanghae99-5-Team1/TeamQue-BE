@@ -12,11 +12,9 @@ import {
 import { GetUser } from 'src/user/get-user.decorator';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
 import { User } from 'src/entity/user.entity';
-import { ClassList } from '../entity/class.entity';
 import { ClassService } from './class.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { CreateDateDto } from './dto/create-date.dto';
-import { GetAllDateByMonthDto } from './dto/get-dateAllByMonth.dto';
 import { StudentStateDto } from './dto/studentState.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
 import { UpdateDateDto } from './dto/update-date.dto';
@@ -180,6 +178,41 @@ export class ClassController {
     @Body() Dto: StudentStateDto,
   ) {
     return this.classService.updateStudentState(Dto, classid, userid, user);
+  }
+  //방송 스트림키 확인
+  @Post('/check')
+  @ApiTags('Class')
+  @ApiOperation({
+    summary: '스트림키 확인',
+    description: '스트림키를 확인한다',
+  })
+  @ApiOkResponse({ description: '맞는지 틀린지 보내준다' })
+  checkClass(@Body() Dto) {
+    return this.classService.checkClass(Dto);
+  }
+
+  //방송 온에어
+  @Post('/onAir')
+  @ApiTags('Class')
+  @ApiOperation({
+    summary: '방송시작',
+    description: '방송시작을 DB에 저장한다.',
+  })
+  @ApiOkResponse({ description: '방송시작을 DB에 저장한다.' })
+  onAirClass(@Body() Dto) {
+    return this.classService.OnAndOffAirClass(Dto, 'on');
+  }
+
+  //방송 오프에어
+  @Post('/offAir')
+  @ApiTags('Class')
+  @ApiOperation({
+    summary: '방송종료',
+    description: '방송종료를 DB에 저장한다.',
+  })
+  @ApiOkResponse({ description: '방송종료를 DB에 저장한다.' })
+  offAirClass(@Body() Dto) {
+    return this.classService.OnAndOffAirClass(Dto, 'off');
   }
 
   //클레스만들기 (+ 클레스 일정)

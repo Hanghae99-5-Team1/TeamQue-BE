@@ -68,12 +68,12 @@ export class PostService {
       .leftJoin('C.user', 'U')
       .getMany();
 
-    const mappingCommnet = comments.map((data) => ({
+    const mappingComment = comments.map((data) => ({
       id: data.id,
       content: data.content,
       userId: data.userId,
       postId: data.postId,
-      CreatedAt: data.createdAt,
+      createdAt: data.createdAt,
       author: data.user.name,
     }));
     return {
@@ -84,14 +84,14 @@ export class PostService {
       content: post.content,
       userId: post.userId,
       author: post.user.name,
-      commnets: mappingCommnet,
+      comments: mappingComment,
     };
   }
 
   async getPostByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
 
-    const Notice = await this.postRepository
+    const hardNotice = await this.postRepository
       .createQueryBuilder('P')
       .select(['P.id', 'P.title', 'U.name', 'P.postType', 'P.createdAt'])
       .leftJoin('P.user', 'U')
@@ -101,7 +101,7 @@ export class PostService {
       .take(10)
       .getMany();
 
-    const postListNotice = Notice.map((data: any) => ({
+    const notice = hardNotice.map((data: any) => ({
       id: data.id,
       title: data.title,
       author: data.user.name,
@@ -115,7 +115,7 @@ export class PostService {
     if (!page) {
       page = 1;
     }
-    const questionPage = 15 - postListNotice.length;
+    const questionPage = 15 - hardNotice.length;
     const skipPage = questionPage * (page - 1);
     const postCountquestion = await this.postRepository.count({
       where: {
@@ -124,7 +124,7 @@ export class PostService {
       },
     });
     const pages = Math.ceil(postCountquestion / questionPage);
-    const question = await this.postRepository
+    const hardquestion = await this.postRepository
       .createQueryBuilder('P')
       .select(['P.id', 'P.title', 'P.postType', 'P.createdAt', 'U.name'])
       .leftJoin('P.user', 'U')
@@ -135,7 +135,7 @@ export class PostService {
       .take(questionPage)
       .getMany();
 
-    const postListquestion = question.map((data: any) => ({
+    const question = hardquestion.map((data: any) => ({
       id: data.id,
       title: data.title,
       author: data.user.name,
@@ -144,7 +144,7 @@ export class PostService {
       commentCount: data.commentsCount,
     }));
 
-    return { postListNotice, postListquestion, pages };
+    return { notice, question, pages };
   }
 
   async deletePost(id: number, user: User): Promise<object> {

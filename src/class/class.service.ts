@@ -254,13 +254,20 @@ export class ClassService {
 
   async getUserInStudent(id) {
     const classlist = await this.classlistRepository.findOne({ id });
-    return await this.studentRepository
+    const student = await this.studentRepository
       .createQueryBuilder('S')
-      .select(['S.state', 'S.name', 'S.userId'])
+      .select(['S.state', 'U.name', 'S.userId'])
+      .leftJoin('S.user', 'U')
       .where('S.classid = :classid', { classid: classlist.id })
       .orderBy('S.name', 'ASC')
       .orderBy('S.state', 'ASC')
       .getMany();
+
+    return student.map((data) => ({
+      state: data.state,
+      name: data.user.name,
+      userId: data.userId,
+    }));
   }
 
   // .andWhere('S.state IN (:...state)', { state: ['wait', 'accepted'] })
@@ -359,5 +366,27 @@ export class ClassService {
       }
     }
     return { success: true, message: '수강신청 처리성공' };
+  }
+
+  async checkClass(Dto) {
+    const { uuid } = Dto;
+    const classlist = await this.classlistRepository.findOne({ uuid });
+    if (classlist) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  async OnAndOffAirClass(Dto, state) {
+    const { uuid } = Dto;
+
+    if (state === 'on') {
+      await this.classlistRepository.update(uuid, { streamNow: true });
+    }
+    if (state === 'off') {
+      await this.classlistRepository.update(uuid, { streamNow: false });
+    }
+    return { success: true, message: '방송상태 전환 성공' };
   }
 }

@@ -33,9 +33,9 @@ export class Student extends BaseEntity {
   @Column({ nullable: true })
   userId: number;
 
-  @ApiProperty({ type: String, description: 'name' }) // 삭제
-  @Column()
-  name: string;
+  // @ApiProperty({ type: String, description: 'name' }) // 삭제
+  // @Column()
+  // name: string;
 
   @ApiProperty({ type: Number, description: 'classId' })
   @Column({ nullable: true })

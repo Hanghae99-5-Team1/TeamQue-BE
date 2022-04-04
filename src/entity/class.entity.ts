@@ -44,6 +44,10 @@ export class ClassList extends BaseEntity {
   @Column()
   uuid: string;
 
+  @ApiProperty({ type: Boolean, description: 'stremNow' })
+  @Column({ default: false })
+  streamNow: boolean;
+
   @ApiProperty({ type: Number, description: 'userId' })
   @Column({ nullable: true })
   userId: number;
