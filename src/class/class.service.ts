@@ -15,6 +15,7 @@ import { DateTime } from 'luxon';
 import { AlarmRepository } from 'src/repository/alarm.repository';
 import { UserRepository } from 'src/repository/user.repository';
 import { Connection } from 'typeorm';
+import { ChatRepository } from 'src/repository/chat.repository';
 
 @Injectable()
 export class ClassService {
@@ -30,6 +31,8 @@ export class ClassService {
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private connection: Connection,
+    @InjectRepository(ChatRepository)
+    private chatRepository: ChatRepository,
   ) {}
 
   async findClassById(id: number): Promise<ClassList> {
@@ -105,7 +108,11 @@ export class ClassService {
     await this.classlistRepository.createClass(Dto, user, unique);
     const classlist = await this.classlistRepository.findOne({ uuid: unique });
     await this.classdateRepository.createClassDate(Dto, classlist);
-    return { success: true, message: '클레스 생성 성공' };
+    return {
+      success: true,
+      message: '클레스 생성 성공',
+      classid: classlist.id,
+    };
   }
 
   async updateClass(Dto, id, user): Promise<object> {
@@ -372,21 +379,31 @@ export class ClassService {
     const { uuid } = Dto;
     const classlist = await this.classlistRepository.findOne({ uuid });
     if (classlist) {
-      return true;
+      return { isExist: true };
     } else {
-      return false;
+      return { isExist: false };
     }
   }
 
   async OnAndOffAirClass(Dto, state) {
     const { uuid } = Dto;
-
+    const classlist = await this.classlistRepository.findOne({ uuid });
+    const id = classlist.id;
     if (state === 'on') {
-      await this.classlistRepository.update(uuid, { streamNow: true });
+      if (classlist.streamNow === true) {
+        return { success: false, message: '방송이 이미 켜져있습니다.' };
+      }
+      await this.classlistRepository.update(id, { streamNow: true });
+      return { success: true, message: 'onAir 성공' };
     }
     if (state === 'off') {
-      await this.classlistRepository.update(uuid, { streamNow: false });
+      if (classlist.streamNow === false) {
+        return { success: false, message: '방송이 이미 꺼져있습니다.' };
+      }
+      await this.classlistRepository.update(id, { streamNow: false });
+      await this.chatRepository.softDelete({ classId: id });
+
+      return { success: true, message: 'offAir & softDelete 성공' };
     }
-    return { success: true, message: '방송상태 전환 성공' };
   }
 }

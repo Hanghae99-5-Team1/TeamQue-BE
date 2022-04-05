@@ -54,7 +54,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       chatType.question,
     );
 
-    const userList = await this.chatService.countStudentsInClass(classId);;
+    const userList = await this.chatService.countStudentsInClass(classId);
     if (this.connectUsers.has(strClassId)) {
       const room = this.connectUsers.get(strClassId);
 

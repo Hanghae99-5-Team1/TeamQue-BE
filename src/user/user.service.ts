@@ -192,7 +192,6 @@ export class UserService {
 
   async editname(name: string, id) {
     await this.userRepository.update(id, { name });
-    const student = await this.studentRepository.find({ userId: id });
   }
 
   async editPassword(Dto, id) {

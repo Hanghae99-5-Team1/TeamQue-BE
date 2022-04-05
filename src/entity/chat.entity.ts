@@ -48,12 +48,12 @@ export class Chat {
   type: number;
 
   @ApiProperty({ type: Number, description: 'createdAt' })
-  @CreateDateColumn({ name: 'create_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
   @ApiProperty({ type: Date, description: 'deletedAt' })
-  @DeleteDateColumn({ name: 'delete_at' })
-  deletedAt?: Date | null;
+  @DeleteDateColumn()
+  deletedAt?: Date;
 
   @OneToMany((type) => Like, (like) => like.chat)
   likes: Like[];

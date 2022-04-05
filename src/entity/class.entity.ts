@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -42,6 +43,7 @@ export class ClassList extends BaseEntity {
 
   @ApiProperty({ type: String, description: 'uuid' })
   @Column()
+  @Index({ unique: true })
   uuid: string;
 
   @ApiProperty({ type: Boolean, description: 'stremNow' })
