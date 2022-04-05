@@ -326,7 +326,6 @@ export class UserService {
       config,
     );
     const { access_token } = response.data;
-    // const access_token = query;
     const getUserUrl = 'https://kapi.kakao.com/v2/user/me';
     const response2 = await axios({
       method: 'get',
@@ -336,7 +335,6 @@ export class UserService {
       },
     });
     const userdata = response2.data;
-    // const email = 'whtkdgusdldi@naver.com';
     const email = userdata.kakao_account.email;
     const name = userdata.properties.nickname;
     const user = await this.userRepository.findOne({
