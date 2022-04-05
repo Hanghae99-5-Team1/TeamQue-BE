@@ -220,7 +220,6 @@ export class ClassController {
   }
 
   //지정 클레스 정보 가져오기
-  //Dto 확인
   @Get('/:classid')
   @ApiTags('Class')
   @ApiOperation({
