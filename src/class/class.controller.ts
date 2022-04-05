@@ -16,7 +16,6 @@ import { ClassService } from './class.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { CreateDateDto } from './dto/create-date.dto';
 import { StudentStateDto } from './dto/studentState.dto';
-import { UpdateClassDto } from './dto/update-class.dto';
 import { UpdateDateDto } from './dto/update-date.dto';
 import { CreateStudentDto } from './dto/create-student.dto';
 import {
@@ -236,20 +235,20 @@ export class ClassController {
     return this.classService.getSelectedClass(id, user);
   }
 
-  //클레스 정보 수정(타이틀,url)
+  //클레스 정보 수정
   @Put('/:classid')
   @ApiTags('Class')
   @ApiOperation({
     summary: '클레스 정보 수정',
-    description: '클레스의 정보중 타이틀과 이미지를 수정 할수있다',
+    description: '클레스의 정보를 수정 할수있다',
   })
   @ApiOkResponse({
-    description: '클레스의 정보중 타이틀과 이미지를 수정 할수있다',
+    description: '클레스의 정보를 수정 할수있다',
   })
-  @ApiBody({ type: UpdateClassDto })
+  @ApiBody({ type: CreateClassDto })
   updateClass(
     @Param('classid') id: number,
-    @Body() Dto: UpdateClassDto,
+    @Body() Dto: CreateClassDto,
     @GetUser() user: User,
   ): Promise<object> {
     return this.classService.updateClass(Dto, id, user);
