@@ -55,23 +55,22 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     const userList = await this.chatService.countStudentsInClass(classId);
-
     if (this.connectUsers.has(strClassId)) {
       const room = this.connectUsers.get(strClassId);
 
       if (room.size !== userList[1]) {
-        userList[0].forEach(({ userId, name }) => {
+        userList[0].forEach(({ userId, user }) => {
           if (!room.has(userId)) {
-            room.set(userId, { name, state: stateType.disconnect });
+            room.set(userId, { name: user.name, state: stateType.disconnect });
           }
         });
       }
     } else {
       this.connectUsers.set(strClassId, new Map<number, object>());
-      userList[0].forEach(({ userId, name }) => {
+      userList[0].forEach(({ userId, user }) => {
         this.connectUsers
           .get(strClassId)
-          .set(userId, { name, state: stateType.disconnect });
+          .set(userId, { name: user.name, state: stateType.disconnect });
       });
     }
 

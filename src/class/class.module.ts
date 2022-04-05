@@ -8,6 +8,8 @@ import { ClassDateRepository } from '../repository/classDate.repository';
 import { StudentRepository } from '../repository/student.repository';
 import { AlarmRepository } from 'src/repository/alarm.repository';
 import { UserRepository } from 'src/repository/user.repository';
+import { OnAirController } from './onair.controller';
+import { ChatRepository } from 'src/repository/chat.repository';
 
 @Module({
   imports: [
@@ -17,10 +19,11 @@ import { UserRepository } from 'src/repository/user.repository';
       StudentRepository,
       AlarmRepository,
       UserRepository,
+      ChatRepository,
     ]),
     UserModule,
   ],
-  controllers: [ClassController],
+  controllers: [ClassController, OnAirController],
   providers: [ClassService],
   exports: [ClassService],
 })

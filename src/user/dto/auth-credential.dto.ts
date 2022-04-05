@@ -10,7 +10,7 @@ import {
 
 export class AuthCredentialsDto {
   @MinLength(2, { message: '이름을 2자 이상 입력해주세요' })
-  @MaxLength(20, { message: '이름을 20자 이하 입력해주세요' })
+  @MaxLength(6, { message: '이름을 6자 이하 입력해주세요' })
   @IsString({ message: '이름을 입력해주세요' })
   @ApiProperty({ type: String, description: '유저이름', example: '더미덤덤' })
   name: string;

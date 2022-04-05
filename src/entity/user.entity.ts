@@ -9,6 +9,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
@@ -33,6 +34,7 @@ export class User extends BaseEntity {
   password: string;
 
   @ApiProperty({ type: String, description: 'email' })
+  @Index()
   @Column()
   email: string;
 
