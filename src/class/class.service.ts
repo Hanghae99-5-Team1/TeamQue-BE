@@ -67,6 +67,8 @@ export class ClassService {
           : DateTime.fromISO(data.endDate) > DateTime.now()
           ? '진행중'
           : '종료',
+      startDate: data.startDate,
+      endDate: data.endDate,
     }));
     return mappingClasslist;
   }
@@ -83,6 +85,8 @@ export class ClassService {
         'C.createdAt',
         'C.userId',
         'C.uuid',
+        'C.startDate',
+        'C.endDate',
       ])
       .leftJoin('C.user', 'U')
       .where('C.id = :id', { id })
@@ -100,6 +104,8 @@ export class ClassService {
       createdAt: selectedClass.createdAt,
       isByMe: isByMe,
       uuid: selectedClass.uuid,
+      startDate: selectedClass.startDate,
+      endDate: selectedClass.endDate,
     };
   }
 
@@ -116,14 +122,36 @@ export class ClassService {
   }
 
   async updateClass(Dto, id, user): Promise<object> {
-    const { title, imageUrl } = Dto;
+    const { title, imageUrl, times, startDate, endDate } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
-    classlist.title = title;
-    if (imageUrl) {
-      classlist.imageUrl = imageUrl;
+    let timeTable = '';
+    const days = ['월', '화', '수', '목', '금', '토', '일'];
+    for (const weekday of times) {
+      const { day, startTime, endTime } = weekday;
+      timeTable += `${days[day - 1]} [${startTime}~${endTime}]/`;
     }
-    await this.classlistRepository.save(classlist);
-    return { success: true, message: '클레스 수정 성공' };
+    if (!timeTable) {
+      throw new BadRequestException('수업일을 설정해주세요');
+    }
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      classlist.title = title;
+      classlist.imageUrl = imageUrl;
+      classlist.startDate = startDate;
+      classlist.endDate = endDate;
+      classlist.timeTable = timeTable;
+      await this.classlistRepository.save(classlist);
+      await this.classdateRepository.delete({ classId: classlist.id });
+      await this.classdateRepository.createClassDate(Dto, classlist);
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw new ConflictException({ message: '처리실패 다시시도해주세요' });
+    } finally {
+      await queryRunner.release();
+      return { success: true, message: '클레스 수정 성공' };
+    }
   }
 
   async deleteClass(id, user: User): Promise<object> {
@@ -319,6 +347,8 @@ export class ClassService {
           : DateTime.fromISO(data.endDate) > DateTime.now()
           ? '진행중'
           : '종료',
+      startDate: data.startDate,
+      endDate: data.endDate,
     }));
     return mappingStudent;
   }
