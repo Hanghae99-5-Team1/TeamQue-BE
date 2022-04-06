@@ -16,6 +16,7 @@ import { AlarmRepository } from 'src/repository/alarm.repository';
 import { UserRepository } from 'src/repository/user.repository';
 import { Connection } from 'typeorm';
 import { ChatRepository } from 'src/repository/chat.repository';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class ClassService {
@@ -50,10 +51,12 @@ export class ClassService {
         'C.startDate',
         'C.endDate',
         'U.name',
+        'C.isStream',
       ])
       .leftJoin('C.user', 'U')
       .where('C.userid = :userid', { userid: user.id })
       .getMany();
+
     const mappingClasslist = classlist.map((data) => ({
       id: data.id,
       title: data.title,
@@ -69,6 +72,7 @@ export class ClassService {
           : '종료',
       startDate: data.startDate,
       endDate: data.endDate,
+      isStream: data.isStream,
     }));
     return mappingClasslist;
   }
@@ -87,6 +91,7 @@ export class ClassService {
         'C.uuid',
         'C.startDate',
         'C.endDate',
+        'C.isStream',
       ])
       .leftJoin('C.user', 'U')
       .where('C.id = :id', { id })
@@ -103,9 +108,9 @@ export class ClassService {
       imageUrl: selectedClass.imageUrl,
       createdAt: selectedClass.createdAt,
       isByMe: isByMe,
-      uuid: selectedClass.uuid,
       startDate: selectedClass.startDate,
       endDate: selectedClass.endDate,
+      isStream: selectedClass.isStream,
     };
   }
 
@@ -124,6 +129,9 @@ export class ClassService {
   async updateClass(Dto, id, user): Promise<object> {
     const { title, imageUrl, times, startDate, endDate } = Dto;
     const classlist = await this.classlistRepository.findOne({ id, user });
+    if (!classlist) {
+      throw new BadRequestException('해당 클래스가 없습니다');
+    }
     let timeTable = '';
     const days = ['월', '화', '수', '목', '금', '토', '일'];
     for (const weekday of times) {
@@ -269,7 +277,8 @@ export class ClassService {
   }
 
   async createStudent(Dto, user: User) {
-    const { uuid } = Dto;
+    const { inviteCode } = Dto;
+    const uuid = this.decipher(inviteCode, 'teamQue9929');
     const classlist = await this.classlistRepository.findOne({ uuid });
     if (!classlist) {
       throw new BadRequestException('강의가 없습니다');
@@ -328,6 +337,7 @@ export class ClassService {
         'S.state',
         'C.startDate',
         'C.endDate',
+        'C.isStream',
       ])
       .leftJoin('C.students', 'S')
       .leftJoin('C.user', 'U')
@@ -349,6 +359,7 @@ export class ClassService {
           : '종료',
       startDate: data.startDate,
       endDate: data.endDate,
+      isStream: data.isStream,
     }));
     return mappingStudent;
   }
@@ -420,20 +431,45 @@ export class ClassService {
     const classlist = await this.classlistRepository.findOne({ uuid });
     const id = classlist.id;
     if (state === 'on') {
-      if (classlist.streamNow === true) {
+      if (classlist.isStream === true) {
         return { success: false, message: '방송이 이미 켜져있습니다.' };
       }
-      await this.classlistRepository.update(id, { streamNow: true });
+      await this.classlistRepository.update(id, { isStream: true });
       return { success: true, message: 'onAir 성공' };
     }
     if (state === 'off') {
-      if (classlist.streamNow === false) {
+      if (classlist.isStream === false) {
         return { success: false, message: '방송이 이미 꺼져있습니다.' };
       }
-      await this.classlistRepository.update(id, { streamNow: false });
+      await this.classlistRepository.update(id, { isStream: false });
       await this.chatRepository.softDelete({ classId: id });
 
       return { success: true, message: 'offAir & softDelete 성공' };
     }
+  }
+
+  async getStreamKey(id, user) {
+    const key = await this.classlistRepository.findOne({ id, user });
+    return { streamKey: key.uuid };
+  }
+
+  async getInviteCode(id, user) {
+    const code = await this.classlistRepository.findOne({ id, user });
+
+    return { inviteCode: await this.cipher(code.uuid, 'teamQue9929') };
+  }
+
+  cipher(password, key) {
+    const encrypt = crypto.createCipher('des', key);
+    const encryptResult =
+      encrypt.update(password, 'utf8', 'base64') + encrypt.final('base64');
+    return encryptResult;
+  }
+
+  decipher(password, key) {
+    const decode = crypto.createDecipher('des', key);
+    const decodeResult =
+      decode.update(password, 'base64', 'utf8') + decode.final('utf8');
+    return decodeResult;
   }
 }

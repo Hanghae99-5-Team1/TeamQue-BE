@@ -1,11 +1,25 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
+import { GetUser } from 'src/user/get-user.decorator';
+import { User } from 'src/entity/user.entity';
 
 @Controller('stream')
 @ApiTags('stream')
 export class OnAirController {
   constructor(private classService: ClassService) {}
+
+  @Get('/key/:classid')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: '내 클레스 방송키 얻기',
+    description: '내 클레스 방송키 얻기',
+  })
+  @ApiOkResponse({ description: '내 클레스 방송키 얻기' })
+  getStreamKey(@Param('classid') id: number, @GetUser() user: User) {
+    return this.classService.getStreamKey(id, user);
+  }
   //방송 스트림키 확인
   @Post('/check')
   @ApiOperation({
