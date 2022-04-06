@@ -228,8 +228,8 @@ export class UserController {
     description: '회원탈퇴',
   })
   @ApiOkResponse({ description: '회원탈퇴' })
-  withdrawalUser(@GetUser() user: User, @Body() Dto): Promise<object> {
-    return this.userService.deleteUser(user, Dto);
+  withdrawalUser(@GetUser() user: User): Promise<object> {
+    return this.userService.deleteUser(user);
   }
 
   //유저정보확인

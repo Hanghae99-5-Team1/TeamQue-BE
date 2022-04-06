@@ -46,9 +46,9 @@ export class ClassList extends BaseEntity {
   @Index({ unique: true })
   uuid: string;
 
-  @ApiProperty({ type: Boolean, description: 'stremNow' })
+  @ApiProperty({ type: Boolean, description: 'isStream' })
   @Column({ default: false })
-  streamNow: boolean;
+  isStream: boolean;
 
   @ApiProperty({ type: Number, description: 'userId' })
   @Column({ nullable: true })

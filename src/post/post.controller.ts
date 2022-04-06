@@ -25,6 +25,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -218,6 +219,7 @@ export class PostController {
     description: '클레스 게시글 가져오기',
   })
   @ApiOkResponse({ description: '클레스 게시글 가져오기' })
+  @ApiQuery({})
   getPostByClassId(
     @Param('classid') id: number,
     @Query() query,

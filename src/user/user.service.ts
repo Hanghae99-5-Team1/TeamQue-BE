@@ -163,17 +163,12 @@ export class UserService {
     }
   }
 
-  async deleteUser(user, Dto) {
-    const { password } = Dto;
-    if (await bcrypt.compare(password, user.password)) {
-      const result = await this.userRepository.delete({ id: user.id });
-      if (result.affected === 0) {
-        throw new NotFoundException('회원 탈퇴 실패!!!');
-      }
-      return { success: true, message: '잘가세요..' };
-    } else {
-      throw new UnauthorizedException('비밀번호를 확인해주세요');
+  async deleteUser(user) {
+    const result = await this.userRepository.delete({ id: user.id });
+    if (result.affected === 0) {
+      throw new NotFoundException('회원 탈퇴 실패!!!');
     }
+    return { success: true, message: '잘가세요..' };
   }
 
   async makeAccessToken(email) {

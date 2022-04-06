@@ -207,6 +207,18 @@ export class ClassController {
     return this.classService.getClass(user);
   }
 
+  //클레스 초대코드 받기
+  @Get('/invitecode/:classid')
+  @ApiTags('Class')
+  @ApiOperation({
+    summary: '클레스 초대코드 받기',
+    description: '클레스 초대코드 받기',
+  })
+  @ApiOkResponse({ description: '클레스 초대코드 받기' })
+  getInviteCode(@Param('classid') id: string, @GetUser() user: User) {
+    return this.classService.getInviteCode(id, user);
+  }
+
   //내가듣는 수업 가져오기
   @Get('/learn')
   @ApiTags('Class')
