@@ -7,9 +7,11 @@ import { StudentRepository } from 'src/repository/student.repository';
 import { ReportRepository } from 'src/repository/report.repository';
 import { LikeRepository } from 'src/repository/like.repository';
 import { UserRepository } from 'src/repository/user.repository';
+import { ClassListRepository } from 'src/repository/class.repository';
 import * as jwt from 'jsonwebtoken';
 import { User } from 'src/entity/user.entity';
 import * as config from 'config';
+import { ClassList } from 'src/entity/class.entity';
 
 const jwtConfig = config.get('jwt');
 
@@ -26,13 +28,13 @@ export class ChatService {
     private likeRepository: LikeRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
+    @InjectRepository(ClassListRepository)
+    private classRepository: ClassListRepository,
   ) {}
 
   async verify(token: string): Promise<User | null> {
     try {
-      console.log(token);
       const payload = jwt.verify(token.split(' ')[1], jwtConfig.secret);
-      console.log(payload);
       const user: User = await this.userRepository.findOne({
         where: { email: payload['email'] },
       });
@@ -117,6 +119,18 @@ export class ChatService {
 
   async findStudent(userId: number): Promise<Student> {
     return await this.studentRepository.findOne({ userId });
+  }
+
+  async findTeacher(userId: number, classId: number): Promise<User | null> {
+    const findClass = await this.classRepository.findOne({ id: classId });
+    if (!findClass || findClass.userId !== userId) return null;
+
+    const findTeacher = await this.userRepository.findOne({
+      select: ['name'],
+      where: { id: userId },
+    });
+
+    return findTeacher ? findTeacher : null;
   }
 
   async likeUp(

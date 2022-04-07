@@ -12,7 +12,14 @@ const stateType = {
   away: 'away',
 } as const;
 
+interface Room {
+  classId?: number;
+  userId?: number;
+  name?: string;
+  state?: string;
+}
+
 type chatType = typeof chatType[keyof typeof chatType];
 type stateType = typeof stateType[keyof typeof stateType];
 
-export { chatType, stateType };
+export { chatType, stateType, Room };

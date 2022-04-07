@@ -7,6 +7,7 @@ import { StudentRepository } from 'src/repository/student.repository';
 import { ReportRepository } from 'src/repository/report.repository';
 import { LikeRepository } from 'src/repository/like.repository';
 import { UserRepository } from 'src/repository/user.repository';
+import { ClassListRepository } from 'src/repository/class.repository';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserRepository } from 'src/repository/user.repository';
       ReportRepository,
       LikeRepository,
       UserRepository,
+      ClassListRepository,
     ]),
   ],
   controllers: [],

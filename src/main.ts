@@ -6,10 +6,10 @@ import { readFileSync } from 'fs';
 
 async function bootstrap() {
   const httpsOptions = {
-    key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
-    cert: readFileSync(
-      '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
+    key: readFileSync(
+      'C:/Users/XPEC/Desktop/sparta/TeamQue-BE/key/privkey.pem',
     ),
+    cert: readFileSync('C:/Users/XPEC/Desktop/sparta/TeamQue-BE/key/cert.pem'),
   };
   const app = await NestFactory.create(AppModule, { httpsOptions });
   // const app = await NestFactory.create(AppModule);
@@ -26,22 +26,22 @@ async function bootstrap() {
 
   const serverConfig = config.get('server');
   const port = serverConfig.port;
-  let disablekeepAlive = false;
-  app.use((req, res, next) => {
-    if (disablekeepAlive) {
-      res.set('Connection', 'close');
-    }
-    next();
-  });
+  // let disablekeepAlive = false;
+  // app.use((req, res, next) => {
+  //   if (disablekeepAlive) {
+  //     res.set('Connection', 'close');
+  //   }
+  //   next();
+  // });
 
-  process.on('SIGINT', async () => {
-    disablekeepAlive = true;
-    await app.close();
-    process.exit(0);
-  });
+  // process.on('SIGINT', async () => {
+  //   disablekeepAlive = true;
+  //   await app.close();
+  //   process.exit(0);
+  // });
 
   app.listen(port, () => {
-    process.send('ready');
+    // process.send('ready');
   });
 
   Logger.log(`Application running on port ${port}`);
