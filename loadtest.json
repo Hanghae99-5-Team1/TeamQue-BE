@@ -15,7 +15,7 @@
           "get": {
             "url": "/user/",
             "headers": {
-              "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndodGtkZ3VzOTVAaGFubWFpbC5uZXQiLCJpYXQiOjE2NDkyNDM3NjYsImV4cCI6MTY0OTI0NzM2Nn0.soqVu4cIIj9M7fc8tVq09Oz_1-9IL43AiBIyG4x69lk"
+              "authorization": "Bearer "
             }
           }
         },
@@ -23,7 +23,7 @@
             "get": {
               "url": "/class/62",
               "headers": {
-                "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndodGtkZ3VzOTVAaGFubWFpbC5uZXQiLCJpYXQiOjE2NDkyNDM3NjYsImV4cCI6MTY0OTI0NzM2Nn0.soqVu4cIIj9M7fc8tVq09Oz_1-9IL43AiBIyG4x69lk"
+                "authorization": "Bearer "
               }
             }
           },
@@ -31,7 +31,7 @@
             "get": {
               "url": "/post/1?page=2",
               "headers": {
-                "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IndodGtkZ3VzOTVAaGFubWFpbC5uZXQiLCJpYXQiOjE2NDkyNDM3NjYsImV4cCI6MTY0OTI0NzM2Nn0.soqVu4cIIj9M7fc8tVq09Oz_1-9IL43AiBIyG4x69lk"
+                "authorization": "Bearer "
               }
             }
           }
