@@ -1,11 +1,12 @@
-import { IsInt, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt } from 'class-validator';
 
 export class GetAllDateByMonthDto {
-  @IsNotEmpty()
-  @IsInt()
+  @IsInt({ message: '연도를 입력해주세요' })
+  @ApiProperty({ type: Number, description: '년', example: 2022 })
   year: number;
 
-  @IsNotEmpty()
-  @IsInt()
+  @IsInt({ message: '월을 입력해주세요' })
+  @ApiProperty({ type: Number, description: '월', example: 3 })
   month: number;
 }

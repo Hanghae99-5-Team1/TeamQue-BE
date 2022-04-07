@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   forwardRef,
   Inject,
   Injectable,
@@ -16,6 +17,9 @@ import { RefreshService } from './refresh.service';
 import { AuthCredentialsDto } from './dto/auth-credential.dto';
 import * as uuid from 'uuid';
 import { EmailService } from './email.service';
+import { Connection } from 'typeorm';
+import { AlarmRepository } from 'src/repository/alarm.repository';
+import { StudentRepository } from 'src/repository/student.repository';
 
 const refreshConfig = config.get('refresh');
 const kakaoConfig = config.get('kakao');
@@ -30,15 +34,21 @@ export class UserService {
     @Inject(forwardRef(() => RefreshService))
     private userService: RefreshService,
     private emailService: EmailService,
+    private connection: Connection,
+    @InjectRepository(AlarmRepository)
+    private alarmRepository: AlarmRepository,
+    @InjectRepository(StudentRepository)
+    private studentRepository: StudentRepository,
   ) {}
 
   async signUp(Dto: AuthCredentialsDto): Promise<object> {
     const user = await this.userRepository.findOne({
       email: Dto.email,
     });
-    if (user) {
+
+    if (user.provider !== null) {
       throw new BadRequestException(
-        `${user.provider}로 이미 이메일이 사용된적있어요`,
+        `${user.provider}로 이메일이 사용된적있어요`,
       );
     }
     if (Dto.password !== Dto.confirmPassword) {
@@ -47,6 +57,12 @@ export class UserService {
     const signupVerifyToken = uuid.v4();
     await this.sendMemberJoinEmail(Dto.email, signupVerifyToken);
 
+    if (user.provider === null) {
+      return {
+        success: true,
+        message: '새로운 이메일인증을 해주세요',
+      };
+    }
     this.userRepository.createUser(
       Dto.email,
       Dto.name,
@@ -57,6 +73,40 @@ export class UserService {
     return { success: true, message: '이메일인증을 해주세요' };
   }
 
+  async findPassword(Dto) {
+    const { email } = Dto;
+    const user = await this.userRepository.findOne({ email });
+    if (!user) {
+      throw new BadRequestException('이메일정보가 정확하지않습니다.');
+    }
+    if (user.provider === null) {
+      throw new BadRequestException('이메일 인증을 진행해주세요.');
+    }
+    if (user.provider !== 'local') {
+      throw new BadRequestException(`${user.provider}로 로그인해주세요`);
+    }
+    const tempUUID = uuid.v4();
+    const tempPassword = tempUUID.split('-')[0];
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+    const id = user.id;
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      await this.userRepository.update(id, { password: hashedPassword });
+      await this.emailService.sendTempPassword(email, tempPassword);
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw new ConflictException({
+        message: '비밀번호 찾기오류 다시시도해주세요',
+      });
+    } finally {
+      await queryRunner.release();
+      return { success: true, message: '이메일에서 확인해주세요' };
+    }
+  }
+
   private async sendMemberJoinEmail(email: string, signupVerifyToken: string) {
     await this.emailService.sendMemberJoinVerification(
       email,
@@ -64,7 +114,7 @@ export class UserService {
     );
   }
 
-  async verifyEmail(signupVerifyToken: string): Promise<object> {
+  async verifyEmail(signupVerifyToken: string) {
     const user = await this.userRepository.findOne({
       currentHashedRefreshToken: signupVerifyToken,
     });
@@ -73,9 +123,20 @@ export class UserService {
     }
     const id = user.id;
     const refreshToken = await this.makeRefreshToken(user.email);
-    await this.userRepository.update(id, { provider: 'local' });
-    await this.userService.CurrnetRefreshToken(refreshToken, id);
-    return;
+    const accessToken = await this.makeAccessToken(user.email);
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      await this.userRepository.update(id, { provider: 'local' });
+      await this.userService.CurrnetRefreshToken(refreshToken, id);
+    } catch (e) {
+      await queryRunner.rollbackTransaction();
+      throw new ConflictException({ message: '인증실패 다시시도해주세요' });
+    } finally {
+      await queryRunner.release();
+      return { accessToken, refreshToken };
+    }
   }
 
   async signIn(Dto): Promise<object> {
@@ -137,10 +198,31 @@ export class UserService {
     await this.userRepository.update(id, { password: hashedPassword });
   }
 
+  async checkAlarm(user) {
+    return await this.alarmRepository.find({ user });
+  }
+
+  async deleteAlarm(user, alarmid) {
+    const result = await this.alarmRepository.delete({ user, id: alarmid });
+    if (result.affected === 0) {
+      throw new NotFoundException('알림 삭제 실패');
+    }
+    return { success: true, message: '알림삭제성공' };
+  }
+
+  async deleteAllAlarm(user) {
+    const result = await this.alarmRepository.delete({ user });
+    if (result.affected === 0) {
+      throw new NotFoundException('알림 삭제 실패');
+    }
+    return { success: true, message: '알림삭제성공' };
+  }
+
   async kakaoSignin() {
     const data = {
       KAKAO_ID: kakaoConfig.client_id,
       KAKAO_REDIRECT_URI: kakaoConfig.redirect_uri,
+      // KAKAO_REDIRECT_URI: 'http://localhost:3000/user/kakao/callback',
     };
     return data;
   }
@@ -198,11 +280,8 @@ export class UserService {
     if (user) {
       await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
       return {
-        success: true,
         accessToken,
         refreshToken,
-        name: user['name'],
-        message: '구글 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
@@ -212,10 +291,8 @@ export class UserService {
       );
       await this.userService.CurrnetRefreshToken(refreshToken, newUser);
       return {
-        success: true,
         accessToken,
         refreshToken,
-        message: '구글 인증 및 로그인 성공',
       };
     }
   }
@@ -226,6 +303,7 @@ export class UserService {
       grant_type: 'authorization_code',
       client_id: kakaoConfig.client_id,
       redirect_uri: kakaoConfig.redirect_uri,
+      // redirect_uri: 'http://localhost:3000/user/kakao/callback',
       client_secret: kakaoConfig.client_secret,
     };
 
@@ -264,11 +342,8 @@ export class UserService {
     if (user) {
       await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
       return {
-        success: true,
         accessToken,
         refreshToken,
-        name: user['name'],
-        message: '카카오 로그인 성공',
       };
     } else {
       const newUser = await this.userRepository.createUser(
@@ -278,10 +353,8 @@ export class UserService {
       );
       await this.userService.CurrnetRefreshToken(refreshToken, newUser);
       return {
-        success: true,
         accessToken,
         refreshToken,
-        message: '카카오 인증 및 로그인 성공',
       };
     }
   }

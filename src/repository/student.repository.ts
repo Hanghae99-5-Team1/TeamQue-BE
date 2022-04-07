@@ -9,7 +9,7 @@ export class StudentRepository extends Repository<Student> {
     const student = this.create({
       class: classlist,
       user,
-      name: user.name,
+      // name: user.name,
       state: 'wait',
     });
     await this.save(student);

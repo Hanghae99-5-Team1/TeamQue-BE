@@ -36,45 +36,86 @@ export class PostService {
     return this.postRepository.createPost(Dto, user, classList);
   }
 
-  async getPostSelested(user: User, id: number): Promise<object> {
+  async getPostSelested(id: number): Promise<object> {
     const post = await this.postRepository
       .createQueryBuilder('P')
       .select([
         'P.id',
         'P.title',
-        'P.author',
         'P.postType',
         'P.createdAt',
         'P.content',
+        'P.userId',
+        'U.name',
       ])
       .where('P.id = :id', { id })
-      .leftJoinAndSelect('P.comments', 'C')
+      .leftJoin('P.user', 'U')
+      // .leftJoinAndSelect('P.comments', 'C')
+      // .leftJoin('C.user', 'U')
       .getOne();
 
-    let isByMe = false;
-    if (post.userId === user.id) {
-      isByMe = true;
-    }
-    return { isByMe, post };
+    const comments = await this.commentRepository
+      .createQueryBuilder('C')
+      .select([
+        'C.id',
+        'C.content',
+        'C.userId',
+        'C.postId',
+        'C.createdAt',
+        'U.name',
+      ])
+      .where('C.postid = :postid', { postid: post.id })
+      .leftJoin('C.user', 'U')
+      .getMany();
+
+    const mappingComment = comments.map((data) => ({
+      id: data.id,
+      content: data.content,
+      userId: data.userId,
+      postId: data.postId,
+      createdAt: data.createdAt,
+      author: data.user.name,
+    }));
+    return {
+      id: post.id,
+      title: post.title,
+      postType: post.postType,
+      createdAt: post.createdAt,
+      content: post.content,
+      userId: post.userId,
+      author: post.user.name,
+      comments: mappingComment,
+    };
   }
 
   async getPostByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
 
-    const postListNotice = await this.postRepository
+    const hardNotice = await this.postRepository
       .createQueryBuilder('P')
-      .select(['P.id', 'P.title', 'P.author', 'P.postType', 'P.createdAt'])
+      .select(['P.id', 'P.title', 'U.name', 'P.postType', 'P.createdAt'])
+      .leftJoin('P.user', 'U')
+      .loadRelationCountAndMap('P.commentsCount', 'P.comments')
       .where('P.classid = :classid', { classid: classList.id })
       .andWhere('P.postType = :postType', { postType: 'Notice' })
       .take(10)
       .getMany();
+
+    const notice = hardNotice.map((data: any) => ({
+      id: data.id,
+      title: data.title,
+      author: data.user.name,
+      postType: data.postType,
+      createdAt: data.createdAt,
+      commentCount: data.commentsCount,
+    }));
 
     // .addSelect('COUNT(*) AS C')
     // .leftJoin('B.comments', 'C')
     if (!page) {
       page = 1;
     }
-    const questionPage = 15 - postListNotice.length;
+    const questionPage = 15 - hardNotice.length;
     const skipPage = questionPage * (page - 1);
     const postCountquestion = await this.postRepository.count({
       where: {
@@ -83,16 +124,27 @@ export class PostService {
       },
     });
     const pages = Math.ceil(postCountquestion / questionPage);
-    const postListquestion = await this.postRepository
+    const hardquestion = await this.postRepository
       .createQueryBuilder('P')
-      .select(['P.id', 'P.title', 'P.author', 'P.postType', 'P.createdAt'])
+      .select(['P.id', 'P.title', 'P.postType', 'P.createdAt', 'U.name'])
+      .leftJoin('P.user', 'U')
+      .loadRelationCountAndMap('P.commentsCount', 'P.comments')
       .where('P.classid = :classid', { classid: classList.id })
       .andWhere('P.postType = :postType', { postType: 'Question' })
       .skip(skipPage)
       .take(questionPage)
       .getMany();
 
-    return { postListNotice, postListquestion, pages };
+    const question = hardquestion.map((data: any) => ({
+      id: data.id,
+      title: data.title,
+      author: data.user.name,
+      postType: data.postType,
+      createdAt: data.createdAt,
+      commentCount: data.commentsCount,
+    }));
+
+    return { notice, question, pages };
   }
 
   async deletePost(id: number, user: User): Promise<object> {

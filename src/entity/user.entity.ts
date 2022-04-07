@@ -9,38 +9,49 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { Like } from './like.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { Alarm } from './alarm.entity';
 
 @Entity()
 @Unique(['email'])
 export class User extends BaseEntity {
+  @ApiProperty({ type: Number, description: 'user_id' })
   @PrimaryGeneratedColumn() //uuid??
   id: number;
 
+  @ApiProperty({ type: String, description: 'name' })
   @Column()
   name: string;
 
+  @ApiProperty({ type: String, description: 'password' })
   @Column({ nullable: true, default: null })
   password: string;
 
+  @ApiProperty({ type: String, description: 'email' })
+  @Index()
   @Column()
   email: string;
 
+  @ApiProperty({ type: String, description: 'provider' })
   @Column({ nullable: true })
   provider: string;
 
+  @ApiProperty({ type: String, description: 'currentHashedRefreshToken' })
   @Column({ nullable: true, default: null })
   @Exclude()
   currentHashedRefreshToken?: string;
 
+  @ApiProperty({ type: Date, description: 'createdAt' })
   @CreateDateColumn()
   createdAt: Date;
 
+  @ApiProperty({ type: Date, description: 'updatedAt' })
   @UpdateDateColumn()
   updatedAt: Date;
 
@@ -50,12 +61,23 @@ export class User extends BaseEntity {
   @OneToMany((type) => Todo, (todo) => todo.user)
   todos: Todo[];
 
-  @OneToMany((type) => ClassList, (classlist) => classlist.user)
+  @OneToMany((type) => ClassList, (classlist) => classlist.user, {
+    cascade: true,
+  })
   classes: ClassList[];
 
-  @OneToMany((type) => Student, (student) => student.user)
+  @OneToMany((type) => Student, (student) => student.user, {
+    cascade: true,
+  })
   studnets: Student[];
 
-  @OneToMany((type) => Comment, (comment) => comment.user)
+  @OneToMany((type) => Comment, (comment) => comment.user, {
+    cascade: true,
+  })
   comments: Comment[];
+
+  @OneToMany((type) => Alarm, (alarm) => alarm.user, {
+    cascade: true,
+  })
+  alarms: Alarm[];
 }

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   Column,
   CreateDateColumn,
@@ -10,38 +11,49 @@ import { Like } from './like.entity';
 
 @Entity()
 export class Chat {
+  @ApiProperty({ type: Number, description: 'chat_id' })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ type: Number, description: 'classId' })
   @Column()
   classId: number;
 
+  @ApiProperty({ type: Number, description: 'userId' })
   @Column()
   userId: number;
 
+  @ApiProperty({ type: String, description: 'userName' })
   @Column()
   userName: string;
 
+  @ApiProperty({ type: String, description: 'content' })
   @Column()
   content: string;
 
+  @ApiProperty({ type: Boolean, description: 'isResolved' })
   @Column()
   isResolved: boolean;
 
+  @ApiProperty({ type: Number, description: 'like' })
   @Column()
   like: number;
 
+  @ApiProperty({ type: String, description: 'uuid' })
   @Column()
   uuid: string;
 
+  @ApiProperty({ type: Number, description: 'type' })
   @Column()
   type: number;
 
-  @CreateDateColumn({ name: 'create_at' })
+  @ApiProperty({ type: Number, description: 'createdAt' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @DeleteDateColumn({ name: 'delete_at' })
-  deletedAt?: Date | null;
+  @ApiProperty({ type: Date, description: 'deletedAt' })
+  @DeleteDateColumn()
+  deletedAt?: Date;
 
   @OneToMany((type) => Like, (like) => like.chat)
   likes: Like[];

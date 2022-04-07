@@ -8,7 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ChatService } from './chat.service';
 import { chatType, stateType, Room } from './chat.interface';
@@ -33,25 +33,26 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleConnection(@ConnectedSocket() client: Socket): Promise<void> {
-    // try {
-    const token = client.handshake.headers.authorization;
-    if (!token) throw errorMessage.emptyValueError;
+    try {
+      const token = client.handshake.headers.authorization;
+      if (!token) throw errorMessage.emptyValueError;
 
-    const user: User | null = await this.chatService.verify(token);
-    if (!user) throw errorMessage.authenticationError;
+      const user: User | null = await this.chatService.verify(token);
+      if (!user) throw errorMessage.authenticationError;
 
-    if (this.userMap.has(user.id)) throw errorMessage.duplicateConnectionError;
+      if (this.userMap.has(user.id))
+        throw errorMessage.duplicateConnectionError;
 
-    client.data.userId = user.id;
-    client.data.name = user.name;
-    this.userMap.set(user.id, client);
+      client.data.userId = user.id;
+      client.data.name = user.name;
+      this.userMap.set(user.id, client);
 
-    Logger.debug(`[Connect] ${user.id}/${user.name}`);
-    return;
-    // } catch (error) {
-    //   this.errorDisconnect(client, 'Connect', error);
-    //   return;
-    // }
+      Logger.debug(`[Connect] ${user.id}/${user.name}`);
+      return;
+    } catch (error) {
+      this.errorDisconnect(client, 'Connect', error);
+      return;
+    }
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket): void {
@@ -81,9 +82,6 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!classId) throw errorMessage.emptyValueError;
 
-      // const result = await this.chatService.isStudent(classId, userId);
-      // if (!result) throw errorMessage.isNotStudent;
-
       const chatList = await this.chatService.findQuestion(
         classId,
         chatType.question,
@@ -97,32 +95,38 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
           userList[0].forEach((row) => {
             if (!room.has(userId)) {
               room.set(row.userId, {
-                name: row.name,
+                name: row.user.name,
                 state: stateType.disconnect,
               });
             }
           });
-        } else {
-          this.roomMap.set(classId, new Map<number, Room>());
-          userList[0].forEach((row) => {
-            this.roomMap
-              .get(classId)
-              .set(row.userId, { name: row.name, state: stateType.disconnect });
-          });
         }
+      } else {
+        this.roomMap.set(classId, new Map<number, Room>());
+        userList[0].forEach((row) => {
+          this.roomMap.get(classId).set(row.userId, {
+            name: row.user.name,
+            state: stateType.disconnect,
+          });
+        });
       }
 
       const teacher: User = await this.chatService.findTeacher(userId, classId);
       console.log(teacher);
+      this.roomMap.get(classId).set(userId, {
+        name: teacher.name,
+        state: stateType.disconnect,
+      });
 
       client.join(String(classId));
       client.broadcast.to(String(classId)).emit('joinUser', { userId, name });
 
       Logger.debug(`[JoinRoom] User ${userId} entered the ${classId}`);
-      console.log(this.server.sockets.adapter.rooms);
 
       this.roomMap.get(classId).get(userId).state = stateType.connect;
       client.data.classId = classId;
+
+      console.log(this.roomMap);
 
       return {
         userList: Object.fromEntries(this.roomMap.get(classId)),

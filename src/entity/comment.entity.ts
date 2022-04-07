@@ -9,27 +9,31 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Comment extends BaseEntity {
+  @ApiProperty({ type: Number, description: 'comment_id' })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ type: String, description: 'content' })
   @Column()
   content: string;
 
-  @Column()
-  author: string;
-
+  @ApiProperty({ type: Number, description: 'userId' })
   @Column({ nullable: true })
   userId: number;
 
+  @ApiProperty({ type: Number, description: 'postId' })
   @Column({ nullable: true })
   postId: number;
 
+  @ApiProperty({ type: Date, description: 'createdAt' })
   @CreateDateColumn()
   createdAt: Date;
 
+  @ApiProperty({ type: Date, description: 'updatedAt' })
   @UpdateDateColumn()
   updatedAt: Date;
 

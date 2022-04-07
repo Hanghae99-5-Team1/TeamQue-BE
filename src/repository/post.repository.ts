@@ -15,7 +15,6 @@ export class PostRepository extends Repository<Post> {
       title,
       content,
       user,
-      author: user.name,
       postType,
       class: classList,
     });
