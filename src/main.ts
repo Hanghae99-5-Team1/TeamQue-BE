@@ -9,12 +9,13 @@ import { urlencoded, json } from 'body-parser';
 
 async function bootstrap() {
   const httpsOptions = {
-    key: readFileSync(
-      'C:/Users/XPEC/Desktop/sparta/TeamQue-BE/key/privkey.pem',
+    key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
+    cert: readFileSync(
+      '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
     ),
-    cert: readFileSync('C:/Users/XPEC/Desktop/sparta/TeamQue-BE/key/cert.pem'),
   };
   const app = await NestFactory.create(AppModule, { httpsOptions });
+  // const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
   //유효성 검사
