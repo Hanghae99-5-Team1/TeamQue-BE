@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Like } from './like.entity';
 
-@Entity()
+@Entity({ name: 'chat', schema: 'public' })
 export class Chat {
   @ApiProperty({ type: Number, description: 'chat_id' })
   @PrimaryGeneratedColumn()

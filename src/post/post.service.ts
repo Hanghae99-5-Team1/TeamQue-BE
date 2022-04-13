@@ -90,7 +90,9 @@ export class PostService {
 
   async getPostByClassId(id: number, page: number): Promise<object> {
     const classList = await this.classService.findClassById(id);
-
+    if (!classList) {
+      throw new BadRequestException('클래스가 없어요');
+    }
     const hardNotice = await this.postRepository
       .createQueryBuilder('P')
       .select(['P.id', 'P.title', 'U.name', 'P.postType', 'P.createdAt'])
@@ -235,24 +237,24 @@ export class PostService {
     return { success: true, message: '할일 삭제 성공' };
   }
 
-  async changeOrderTodo(todoid1, todoid2, user) {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const todo1 = await this.todoRepository.findOne({ id: todoid1, user });
-      const todo2 = await this.todoRepository.findOne({ id: todoid2, user });
-      const order = todo1.order;
-      todo1.order = todo2.order;
-      todo2.order = order;
-      await this.todoRepository.save(todo1);
-      await this.todoRepository.save(todo2);
-    } catch (e) {
-      await queryRunner.rollbackTransaction();
-      throw new ConflictException({ message: '수정실패 다시시도해주세요' });
-    } finally {
-      await queryRunner.release();
-      return { success: true, message: '할일 순서바꾸기 성공' };
-    }
-  }
+  // async changeOrderTodo(todoid1, todoid2, user) {
+  //   const queryRunner = this.connection.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
+  //   try {
+  //     const todo1 = await this.todoRepository.findOne({ id: todoid1, user });
+  //     const todo2 = await this.todoRepository.findOne({ id: todoid2, user });
+  //     const order = todo1.order;
+  //     todo1.order = todo2.order;
+  //     todo2.order = order;
+  //     await this.todoRepository.save(todo1);
+  //     await this.todoRepository.save(todo2);
+  //   } catch (e) {
+  //     await queryRunner.rollbackTransaction();
+  //     throw new ConflictException({ message: '수정실패 다시시도해주세요' });
+  //   } finally {
+  //     await queryRunner.release();
+  //     return { success: true, message: '할일 순서바꾸기 성공' };
+  //   }
+  // }
 }

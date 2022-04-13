@@ -20,6 +20,7 @@ import { EmailService } from './email.service';
 import { Connection } from 'typeorm';
 import { AlarmRepository } from 'src/repository/alarm.repository';
 import { StudentRepository } from 'src/repository/student.repository';
+// import { ClassService } from 'src/class/class.service';
 
 const refreshConfig = config.get('refresh');
 const kakaoConfig = config.get('kakao');
@@ -45,23 +46,26 @@ export class UserService {
     const user = await this.userRepository.findOne({
       email: Dto.email,
     });
-
-    if (user.provider !== null) {
-      throw new BadRequestException(
-        `${user.provider}로 이메일이 사용된적있어요`,
-      );
+    if (user) {
+      if (user.provider !== null) {
+        throw new BadRequestException(
+          `${user.provider}로 이메일이 사용된적있어요`,
+        );
+      }
     }
+
     if (Dto.password !== Dto.confirmPassword) {
       throw new BadRequestException('비밀번호와 비밀번호확인이 다릅니다');
     }
     const signupVerifyToken = uuid.v4();
     await this.sendMemberJoinEmail(Dto.email, signupVerifyToken);
-
-    if (user.provider === null) {
-      return {
-        success: true,
-        message: '새로운 이메일인증을 해주세요',
-      };
+    if (user) {
+      if (user.provider === null) {
+        return {
+          success: true,
+          message: '새로운 이메일인증을 해주세요',
+        };
+      }
     }
     this.userRepository.createUser(
       Dto.email,
@@ -70,6 +74,9 @@ export class UserService {
       Dto.password,
       signupVerifyToken,
     );
+    const user1 = await this.userRepository.findOne({
+      email: Dto.email,
+    });
     return { success: true, message: '이메일인증을 해주세요' };
   }
 
@@ -90,19 +97,19 @@ export class UserService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
     const id = user.id;
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // const queryRunner = this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       await this.userRepository.update(id, { password: hashedPassword });
       await this.emailService.sendTempPassword(email, tempPassword);
     } catch (e) {
-      await queryRunner.rollbackTransaction();
+      // await queryRunner.rollbackTransaction();
       throw new ConflictException({
         message: '비밀번호 찾기오류 다시시도해주세요',
       });
     } finally {
-      await queryRunner.release();
+      // await queryRunner.release();
       return { success: true, message: '이메일에서 확인해주세요' };
     }
   }
@@ -124,19 +131,11 @@ export class UserService {
     const id = user.id;
     const refreshToken = await this.makeRefreshToken(user.email);
     const accessToken = await this.makeAccessToken(user.email);
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      await this.userRepository.update(id, { provider: 'local' });
-      await this.userService.CurrnetRefreshToken(refreshToken, id);
-    } catch (e) {
-      await queryRunner.rollbackTransaction();
-      throw new ConflictException({ message: '인증실패 다시시도해주세요' });
-    } finally {
-      await queryRunner.release();
-      return { accessToken, refreshToken };
-    }
+
+    await this.userRepository.update(id, { provider: 'local' });
+    await this.userService.CurrnetRefreshToken(refreshToken, id);
+
+    return { accessToken, refreshToken };
   }
 
   async signIn(Dto): Promise<object> {
@@ -235,17 +234,155 @@ export class UserService {
     };
     return data;
   }
-  async googleCallback(query) {
-    const data = {
-      code: query,
-      grant_type: 'authorization_code',
-      client_id: googleConfig.client_id,
-      redirect_uri: googleConfig.redirect_uri,
-      // redirect_uri: 'http://localhost:3000/user/google/callback',
-      client_secret: googleConfig.client_secret,
-      Scopes: 'https://www.googleapis.com/auth/userinfo.email',
-    };
+  // async googleCallback(query) {
+  //   const data = {
+  //     code: query,
+  //     grant_type: 'authorization_code',
+  //     client_id: googleConfig.client_id,
+  //     redirect_uri: googleConfig.redirect_uri,
+  //     client_secret: googleConfig.client_secret,
+  //     Scopes: 'https://www.googleapis.com/auth/userinfo.email',
+  //   };
 
+  //   const queryStringBody = Object.keys(data)
+  //     .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
+  //     .join('&');
+  //   const config: AxiosRequestConfig = {
+  //     headers: {
+  //       'Content-Type': 'application/x-www-form-urlencoded',
+  //     },
+  //   };
+  //   const response = await axios.post(
+  //     'https://www.googleapis.com/oauth2/v4/token',
+  //     queryStringBody,
+  //     config,
+  //   );
+  //   const { access_token } = response.data;
+  //   const getUserUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  //   const response2 = await axios({
+  //     method: 'get',
+  //     url: getUserUrl,
+  //     headers: {
+  //       Authorization: `Bearer ${access_token}`,
+  //       accept: 'application/json',
+  //     },
+  //   });
+  //   const userdata = response2.data;
+  //   const email = userdata.email;
+  //   const name = userdata.name;
+  //   const user = await this.userRepository.findOne({
+  //     email,
+  //   });
+  //   const accessToken = await this.makeAccessToken(email);
+  //   const refreshToken = await this.makeRefreshToken(email);
+  //   if (user) {
+  //     await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //     };
+  //   } else {
+  //     const newUser = await this.userRepository.createUser(
+  //       email,
+  //       name,
+  //       'google',
+  //     );
+  //     await this.userService.CurrnetRefreshToken(refreshToken, newUser);
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //     };
+  //   }
+  // }
+
+  // async kakaoCallback(query) {
+  //   const data = {
+  //     code: query,
+  //     grant_type: 'authorization_code',
+  //     client_id: kakaoConfig.client_id,
+  //     redirect_uri: kakaoConfig.redirect_uri,
+  //     client_secret: kakaoConfig.client_secret,
+  //   };
+
+  //   const queryStringBody = Object.keys(data)
+  //     .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
+  //     .join('&');
+  //   const config: AxiosRequestConfig = {
+  //     headers: {
+  //       'Content-Type': 'application/x-www-form-urlencoded',
+  //     },
+  //   };
+  //   const response = await axios.post(
+  //     'https://kauth.kakao.com/oauth/token',
+  //     queryStringBody,
+  //     config,
+  //   );
+  //   const { access_token } = response.data;
+  //   const getUserUrl = 'https://kapi.kakao.com/v2/user/me';
+  //   const response2 = await axios({
+  //     method: 'get',
+  //     url: getUserUrl,
+  //     headers: {
+  //       Authorization: `Bearer ${access_token}`,
+  //     },
+  //   });
+  //   const userdata = response2.data;
+  //   const email = userdata.kakao_account.email;
+  //   const name = userdata.properties.nickname;
+  //   const user = await this.userRepository.findOne({
+  //     email,
+  //   });
+  //   const accessToken = await this.makeAccessToken(email);
+  //   const refreshToken = await this.makeRefreshToken(email);
+  //   if (user) {
+  //     await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //     };
+  //   } else {
+  //     const newUser = await this.userRepository.createUser(
+  //       email,
+  //       name,
+  //       'kakao',
+  //     );
+  //     await this.userService.CurrnetRefreshToken(refreshToken, newUser);
+  //     return {
+  //       accessToken,
+  //       refreshToken,
+  //     };
+  //   }
+  // }
+
+  async callback(query, provider) {
+    let data;
+    let getUserUrl;
+    let tokenUrl;
+    if (provider === 'google') {
+      data = {
+        code: query,
+        grant_type: 'authorization_code',
+        client_id: googleConfig.client_id,
+        redirect_uri: googleConfig.redirect_uri,
+        // redirect_uri: 'http://localhost:3000/user/google/callback',
+        client_secret: googleConfig.client_secret,
+        Scopes: 'https://www.googleapis.com/auth/userinfo.email',
+      };
+      tokenUrl = 'https://www.googleapis.com/oauth2/v4/token';
+      getUserUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+    }
+    if (provider === 'kakao') {
+      data = {
+        code: query,
+        grant_type: 'authorization_code',
+        client_id: kakaoConfig.client_id,
+        redirect_uri: kakaoConfig.redirect_uri,
+        // redirect_uri: 'http://localhost:3000/user/kakao/callback',
+        client_secret: kakaoConfig.client_secret,
+      };
+      tokenUrl = 'https://kauth.kakao.com/oauth/token';
+      getUserUrl = 'https://kapi.kakao.com/v2/user/me';
+    }
     const queryStringBody = Object.keys(data)
       .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
       .join('&');
@@ -254,13 +391,9 @@ export class UserService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     };
-    const response = await axios.post(
-      'https://www.googleapis.com/oauth2/v4/token',
-      queryStringBody,
-      config,
-    );
+
+    const response = await axios.post(tokenUrl, queryStringBody, config);
     const { access_token } = response.data;
-    const getUserUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
     const response2 = await axios({
       method: 'get',
       url: getUserUrl,
@@ -270,70 +403,17 @@ export class UserService {
       },
     });
     const userdata = response2.data;
-    const email = userdata.email;
-    const name = userdata.name;
-    const user = await this.userRepository.findOne({
-      email,
-    });
-    const accessToken = await this.makeAccessToken(email);
-    const refreshToken = await this.makeRefreshToken(email);
-    if (user) {
-      await this.userService.CurrnetRefreshToken(refreshToken, user['id']);
-      return {
-        accessToken,
-        refreshToken,
-      };
-    } else {
-      const newUser = await this.userRepository.createUser(
-        email,
-        name,
-        'google',
-      );
-      await this.userService.CurrnetRefreshToken(refreshToken, newUser);
-      return {
-        accessToken,
-        refreshToken,
-      };
+    let email;
+    let name;
+    if (provider === 'google') {
+      email = userdata.email;
+      name = userdata.name;
     }
-  }
+    if (provider === 'kakao') {
+      email = userdata.kakao_account.email;
+      name = userdata.properties.nickname;
+    }
 
-  async kakaoCallback(query) {
-    const data = {
-      code: query,
-      grant_type: 'authorization_code',
-      client_id: kakaoConfig.client_id,
-      redirect_uri: kakaoConfig.redirect_uri,
-      // redirect_uri: 'http://localhost:3000/user/kakao/callback',
-      client_secret: kakaoConfig.client_secret,
-    };
-
-    const queryStringBody = Object.keys(data)
-      .map((k) => encodeURIComponent(k) + '=' + encodeURI(data[k]))
-      .join('&');
-    const config: AxiosRequestConfig = {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    };
-    const response = await axios.post(
-      'https://kauth.kakao.com/oauth/token',
-      queryStringBody,
-      config,
-    );
-    const { access_token } = response.data;
-    // const access_token = query;
-    const getUserUrl = 'https://kapi.kakao.com/v2/user/me';
-    const response2 = await axios({
-      method: 'get',
-      url: getUserUrl,
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-    });
-    const userdata = response2.data;
-    // const email = 'whtkdgusdldi@naver.com';
-    const email = userdata.kakao_account.email;
-    const name = userdata.properties.nickname;
     const user = await this.userRepository.findOne({
       email,
     });
@@ -349,8 +429,11 @@ export class UserService {
       const newUser = await this.userRepository.createUser(
         email,
         name,
-        'kakao',
+        provider,
       );
+      const user1 = await this.userRepository.findOne({
+        email,
+      });
       await this.userService.CurrnetRefreshToken(refreshToken, newUser);
       return {
         accessToken,

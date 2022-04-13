@@ -8,17 +8,16 @@ import * as cookieParser from 'cookie-parser';
 import { urlencoded, json } from 'body-parser';
 
 async function bootstrap() {
-  const httpsOptions = {
-    key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
-    cert: readFileSync(
-      '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
-    ),
-  };
-  const app = await NestFactory.create(AppModule, { httpsOptions });
-  // const app = await NestFactory.create(AppModule);
+  // const httpsOptions = {
+  //   key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
+  //   cert: readFileSync(
+  //     '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
+  //   ),
+  // };
+  // const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
-  //유효성 검사
   app.useGlobalPipes(
     new ValidationPipe({
       // whitelist:true;,
@@ -26,11 +25,10 @@ async function bootstrap() {
       // forbidNonWhitelisted: true,
     }),
   );
-  //세션사용
   app.use(cookieParser());
-  //cors설정 => 수정필
-  app.enableCors();
-  //스웨그 설정
+  app.enableCors({
+    origin: 'https://everyque.com',
+  });
   const swagconfig = new DocumentBuilder()
     .setTitle('Every Que')
     .setDescription('Every Que API description')

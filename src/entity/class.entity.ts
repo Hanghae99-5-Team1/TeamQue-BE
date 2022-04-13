@@ -15,7 +15,7 @@ import { ClassDate } from './classDate.entity';
 import { Student } from './student.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity()
+@Entity({ name: 'classlist', schema: 'public' })
 export class ClassList extends BaseEntity {
   @ApiProperty({ type: Number, description: 'class_id' })
   @PrimaryGeneratedColumn()

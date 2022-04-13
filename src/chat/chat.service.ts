@@ -121,13 +121,12 @@ export class ChatService {
     return await this.studentRepository.findOne({ userId });
   }
 
-  async findTeacher(userId: number, classId: number): Promise<User | null> {
+  async findTeacher(classId: number): Promise<User | null> {
     const findClass = await this.classRepository.findOne({ id: classId });
-    if (!findClass || findClass.userId !== userId) return null;
 
     const findTeacher = await this.userRepository.findOne({
-      select: ['name'],
-      where: { id: userId },
+      select: ['name', 'id'],
+      where: { id: findClass.userId },
     });
 
     return findTeacher ? findTeacher : null;

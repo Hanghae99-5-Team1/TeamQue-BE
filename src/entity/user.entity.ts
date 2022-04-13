@@ -12,14 +12,12 @@ import {
   Index,
   OneToMany,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Alarm } from './alarm.entity';
 
-@Entity()
-@Unique(['email'])
+@Entity({ name: 'user', schema: 'public' })
 export class User extends BaseEntity {
   @ApiProperty({ type: Number, description: 'user_id' })
   @PrimaryGeneratedColumn() //uuid??
@@ -34,7 +32,7 @@ export class User extends BaseEntity {
   password: string;
 
   @ApiProperty({ type: String, description: 'email' })
-  @Index()
+  @Index({ unique: true })
   @Column()
   email: string;
 

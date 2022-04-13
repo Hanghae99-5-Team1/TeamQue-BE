@@ -2,7 +2,7 @@ import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Chat } from 'src/entity/chat.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity()
+@Entity({ name: 'like', schema: 'public' })
 export class Like {
   @ApiProperty({ type: Number, description: 'like_id' })
   @PrimaryGeneratedColumn()

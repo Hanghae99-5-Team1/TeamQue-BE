@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'todo', schema: 'public' })
 export class Todo extends BaseEntity {
   @ApiProperty({ type: Number, description: 'todo_id' })
   @PrimaryGeneratedColumn()

@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { ClassList } from './class.entity';
 
-@Entity()
+@Entity({ name: 'classdate', schema: 'public' })
 export class ClassDate extends BaseEntity {
   @ApiProperty({ type: Number, description: 'classDate_id' })
   @PrimaryGeneratedColumn()

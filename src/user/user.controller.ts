@@ -99,13 +99,15 @@ export class UserController {
   @ApiTags('user')
   @Redirect('https://everyque.com')
   async kakaoCallback(@Query() query, @Res() res) {
-    const { accessToken, refreshToken } = await this.userService.kakaoCallback(
+    //   const { accessToken, refreshToken } = await this.userService.kakaoCallback(
+    //     query.code,
+    //   );
+    const { accessToken, refreshToken } = await this.userService.callback(
       query.code,
+      'kakao',
     );
     // res.cookie('refreshToken', refreshToken);
     // res.cookie('accessToken', accessToken);
-    // res.session.token = { accessToken, refreshToken };
-    // res.session.save();
     // return res.redirect('https://everyque.com/auth');
     return {
       url: `https://everyque.com/auth?accessToken=${accessToken}&refreshToken=${refreshToken}`,
@@ -134,8 +136,12 @@ export class UserController {
   @ApiTags('user')
   @Get('/google/callback')
   async googleCallback(@Query() query, @Res() res) {
-    const { accessToken, refreshToken } = await this.userService.googleCallback(
+    // const { accessToken, refreshToken } = await this.userService.googleCallback(
+    //   query.code,
+    // );
+    const { accessToken, refreshToken } = await this.userService.callback(
       query.code,
+      'google',
     );
     // res.cookie('refreshToken', refreshToken);
     // res.cookie('accessToken', accessToken);
@@ -205,7 +211,7 @@ export class UserController {
   }
 
   //로그아웃
-  @Post('/signout')
+  @Delete('/signout')
   @ApiTags('user')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)

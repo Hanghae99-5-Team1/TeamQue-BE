@@ -14,7 +14,7 @@ import {
 import { Comment } from './comment.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity({ orderBy: { createdAt: 'DESC', id: 'DESC' } })
+@Entity({ name: 'post', orderBy: { createdAt: 'DESC', id: 'DESC' } })
 export class Post extends BaseEntity {
   @ApiProperty({ type: Number, description: 'post_id' })
   @PrimaryGeneratedColumn()

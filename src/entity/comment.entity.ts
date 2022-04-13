@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity()
+@Entity({ name: 'comment', schema: 'public' })
 export class Comment extends BaseEntity {
   @ApiProperty({ type: Number, description: 'comment_id' })
   @PrimaryGeneratedColumn()

@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'alarm', schema: 'public' })
 export class Alarm extends BaseEntity {
   @ApiProperty({ type: Number, description: 'alarm_id' })
   @PrimaryGeneratedColumn()

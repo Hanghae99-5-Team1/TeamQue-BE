@@ -56,7 +56,6 @@ export class ClassService {
       .leftJoin('C.user', 'U')
       .where('C.userid = :userid', { userid: user.id })
       .getMany();
-
     const mappingClasslist = classlist.map((data) => ({
       id: data.id,
       title: data.title,
@@ -141,9 +140,9 @@ export class ClassService {
     if (!timeTable) {
       throw new BadRequestException('수업일을 설정해주세요');
     }
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // const queryRunner = this.connection.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
     try {
       classlist.title = title;
       classlist.imageUrl = imageUrl;
@@ -154,10 +153,10 @@ export class ClassService {
       await this.classdateRepository.delete({ classId: classlist.id });
       await this.classdateRepository.createClassDate(Dto, classlist);
     } catch (e) {
-      await queryRunner.rollbackTransaction();
+      // await queryRunner.rollbackTransaction();
       throw new ConflictException({ message: '처리실패 다시시도해주세요' });
     } finally {
-      await queryRunner.release();
+      // await queryRunner.release();
       return { success: true, message: '클레스 수정 성공' };
     }
   }
@@ -172,6 +171,9 @@ export class ClassService {
 
   async getClassDate(id, year, month) {
     const classlist = await this.classlistRepository.findOne({ id });
+    if (!classlist) {
+      throw new BadRequestException('클래스가 없어요');
+    }
     const classdate = await this.classdateRepository
       .createQueryBuilder('D')
       .select(['D.day', 'D.startTime', 'D.endTime', 'C.title'])
@@ -236,6 +238,9 @@ export class ClassService {
       id: classid,
       user,
     });
+    if (!classlist) {
+      throw new BadRequestException('클래스가 없어요');
+    }
     const classdate = await this.classdateRepository.findOne({
       id: classdateid,
       class: classlist,
@@ -297,12 +302,11 @@ export class ClassService {
   }
 
   async getUserInStudent(id) {
-    const classlist = await this.classlistRepository.findOne({ id });
     const student = await this.studentRepository
       .createQueryBuilder('S')
-      .select(['S.state', 'U.name', 'S.userId'])
+      .select(['S', 'U.name'])
       .leftJoin('S.user', 'U')
-      .where('S.classid = :classid', { classid: classlist.id })
+      .where('S.classid = :classid', { classid: id })
       .orderBy('S.name', 'ASC')
       .orderBy('S.state', 'ASC')
       .getMany();
@@ -328,17 +332,7 @@ export class ClassService {
   async getClassInStudent(user: User) {
     const student = await this.classlistRepository
       .createQueryBuilder('C')
-      .select([
-        'C.id',
-        'C.title',
-        'U.name',
-        'C.timeTable',
-        'C.imageUrl',
-        'S.state',
-        'C.startDate',
-        'C.endDate',
-        'C.isStream',
-      ])
+      .select(['C', 'U.name', 'S.state'])
       .leftJoin('C.students', 'S')
       .leftJoin('C.user', 'U')
       .where('S.userid = :userid', { userid: user.id })
@@ -362,6 +356,7 @@ export class ClassService {
       isStream: data.isStream,
     }));
     return mappingStudent;
+    // return student;
   }
 
   async deleteStudent(id, user: User) {
@@ -382,9 +377,9 @@ export class ClassService {
       classId: teachClass.id,
     });
     if (isOk == true) {
-      const queryRunner = this.connection.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+      // const queryRunner = this.connection.createQueryRunner();
+      // await queryRunner.connect();
+      // await queryRunner.startTransaction();
       try {
         studentlist.state = 'accepted';
         const student = await this.userRepository.findOne({ id: userid });
@@ -392,25 +387,25 @@ export class ClassService {
         await this.alarmRepository.createAlarm(student, sendalarm);
         await this.studentRepository.save(studentlist);
       } catch (e) {
-        await queryRunner.rollbackTransaction();
+        // await queryRunner.rollbackTransaction();
         throw new ConflictException({ message: '처리실패 다시시도해주세요' });
       } finally {
-        await queryRunner.release();
+        // await queryRunner.release();
       }
     } else {
-      const queryRunner = this.connection.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+      // const queryRunner = this.connection.createQueryRunner();
+      // await queryRunner.connect();
+      // await queryRunner.startTransaction();
       try {
         await this.studentRepository.delete({ id: studentlist.id });
         const student = await this.userRepository.findOne({ id: userid });
         const sendalarm = `${teachClass.title} 수강신청이 거절되었습니다.`;
         await this.alarmRepository.createAlarm(student, sendalarm);
       } catch (e) {
-        await queryRunner.rollbackTransaction();
+        // await queryRunner.rollbackTransaction();
         throw new ConflictException({ message: '처리실패 다시시도해주세요' });
       } finally {
-        await queryRunner.release();
+        // await queryRunner.release();
       }
     }
     return { success: true, message: '수강신청 처리성공' };
@@ -429,6 +424,9 @@ export class ClassService {
   async OnAndOffAirClass(Dto, state) {
     const { uuid } = Dto;
     const classlist = await this.classlistRepository.findOne({ uuid });
+    if (!classlist) {
+      throw new BadRequestException('클래스가 없어요');
+    }
     const id = classlist.id;
     if (state === 'on') {
       if (classlist.isStream === true) {
@@ -448,14 +446,20 @@ export class ClassService {
     }
   }
 
-  async getStreamKey(id, user) {
-    const key = await this.classlistRepository.findOne({ id, user });
+  async getStreamKey(id) {
+    const key = await this.classlistRepository.findOne({ id });
+    if (!key) {
+      throw new BadRequestException('정보가 적합하지 않아요');
+    }
     return { streamKey: key.uuid };
   }
 
   async getInviteCode(id, user) {
     const code = await this.classlistRepository.findOne({ id, user });
 
+    if (!code) {
+      throw new BadRequestException('정보가 적합하지 않아요');
+    }
     return { inviteCode: await this.cipher(code.uuid, 'teamQue9929') };
   }
 

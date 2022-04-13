@@ -62,7 +62,7 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       this.roomMap.get(classId).get(userId).state = stateType.disconnect;
       this.server.to(String(classId)).emit('leaveUser', { userId, name });
     }
-
+    this.userMap.delete(userId);
     Logger.debug(`[Disconnect] (${name})${userId}/${classId}`);
     return;
   }
@@ -79,8 +79,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const { userId, name } = client.data;
       const { classId } = payload;
-
-      if (!classId) throw errorMessage.emptyValueError;
+      console.log(classId);
+      if (!classId || typeof classId !== 'number')
+        throw errorMessage.emptyValueError;
 
       const chatList = await this.chatService.findQuestion(
         classId,
@@ -90,10 +91,9 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       const userList = await this.chatService.countStudentsInClass(classId);
       if (this.roomMap.has(classId)) {
         const room = this.roomMap.get(classId);
-
-        if (room.size !== userList[1]) {
+        if (room.size + 1 !== userList[1]) {
           userList[0].forEach((row) => {
-            if (!room.has(userId)) {
+            if (!room.has(row.userId)) {
               room.set(row.userId, {
                 name: row.user.name,
                 state: stateType.disconnect,
@@ -109,14 +109,12 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
             state: stateType.disconnect,
           });
         });
+        const teacher: User = await this.chatService.findTeacher(classId);
+        this.roomMap.get(classId).set(teacher.id, {
+          name: teacher.name,
+          state: stateType.disconnect,
+        });
       }
-
-      const teacher: User = await this.chatService.findTeacher(userId, classId);
-      console.log(teacher);
-      this.roomMap.get(classId).set(userId, {
-        name: teacher.name,
-        state: stateType.disconnect,
-      });
 
       client.join(String(classId));
       client.broadcast.to(String(classId)).emit('joinUser', { userId, name });

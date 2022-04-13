@@ -17,8 +17,8 @@ export class OnAirController {
     description: '내 클레스 방송키 얻기',
   })
   @ApiOkResponse({ description: '내 클레스 방송키 얻기' })
-  getStreamKey(@Param('classid') id: number, @GetUser() user: User) {
-    return this.classService.getStreamKey(id, user);
+  getStreamKey(@Param('classid') id: number) {
+    return this.classService.getStreamKey(id);
   }
   //방송 스트림키 확인
   @Post('/check')

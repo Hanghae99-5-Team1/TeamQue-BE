@@ -61,17 +61,17 @@ export class PostController {
   }
 
   //투두리스트 순서바꾸기
-  @Put('/todo/order')
-  @ApiTags('post/todo')
-  @ApiOperation({
-    summary: '할일 메모 순서 바꾸기',
-    description: '할일 메모 순서 바꾸기',
-  })
-  @ApiOkResponse({ description: '할일 메모 순서 바꾸기' })
-  @ApiBody({ type: changeOrderTodoDto })
-  changeOrderTodo(@Body() Dto: changeOrderTodoDto, @GetUser() user: User) {
-    return this.postService.changeOrderTodo(Dto.to, Dto.from, user);
-  }
+  // @Put('/todo/order')
+  // @ApiTags('post/todo')
+  // @ApiOperation({
+  //   summary: '할일 메모 순서 바꾸기',
+  //   description: '할일 메모 순서 바꾸기',
+  // })
+  // @ApiOkResponse({ description: '할일 메모 순서 바꾸기' })
+  // @ApiBody({ type: changeOrderTodoDto })
+  // changeOrderTodo(@Body() Dto: changeOrderTodoDto, @GetUser() user: User) {
+  //   return this.postService.changeOrderTodo(Dto.to, Dto.from, user);
+  // }
 
   //투두리스트 삭제
   @Delete('/todo/:todoid')

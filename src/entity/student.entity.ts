@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import { ClassList } from './class.entity';
 
-@Entity()
+@Entity({ name: 'student', schema: 'public' })
 export class Student extends BaseEntity {
   @ApiProperty({ type: Number, description: 'student_id' })
   @PrimaryGeneratedColumn()

@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'report', schema: 'public' })
 export class Report {
   @ApiProperty({ type: Number, description: 'report_id' })
   @PrimaryGeneratedColumn()

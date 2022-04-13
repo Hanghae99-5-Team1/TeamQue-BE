@@ -127,9 +127,9 @@ export class ClassController {
   @ApiTags('Class/student')
   @ApiOperation({
     summary: '학생의 수강신청',
-    description: 'uuid를 통해 수강신청을할수있다',
+    description: 'inviteCode를 통해 수강신청을할수있다',
   })
-  @ApiCreatedResponse({ description: 'uuid를 통해 수강신청을할수있다' })
+  @ApiCreatedResponse({ description: 'inviteCode를 통해 수강신청을할수있다' })
   @ApiBody({ type: CreateStudentDto })
   createStudent(@Body() Dto: CreateStudentDto, @GetUser() user: User) {
     return this.classService.createStudent(Dto, user);
