@@ -74,9 +74,6 @@ export class UserService {
       Dto.password,
       signupVerifyToken,
     );
-    const user1 = await this.userRepository.findOne({
-      email: Dto.email,
-    });
     return { success: true, message: '이메일인증을 해주세요' };
   }
 
@@ -431,9 +428,6 @@ export class UserService {
         name,
         provider,
       );
-      const user1 = await this.userRepository.findOne({
-        email,
-      });
       await this.userService.CurrnetRefreshToken(refreshToken, newUser);
       return {
         accessToken,

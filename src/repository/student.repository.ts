@@ -10,7 +10,7 @@ export class StudentRepository extends Repository<Student> {
       class: classlist,
       user,
       // name: user.name,
-      state: 'accepted',
+      state: 'wait',
     });
     await this.save(student);
     return { success: true, message: '수강 신청 성공' };
