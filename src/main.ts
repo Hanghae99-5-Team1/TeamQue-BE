@@ -8,14 +8,14 @@ import * as cookieParser from 'cookie-parser';
 import { urlencoded, json } from 'body-parser';
 
 async function bootstrap() {
-  const httpsOptions = {
-    key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
-    cert: readFileSync(
-      '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
-    ),
-  };
-  const app = await NestFactory.create(AppModule, { httpsOptions });
-  // const app = await NestFactory.create(AppModule);
+  // const httpsOptions = {
+  //   key: readFileSync('../../../etc/letsencrypt/live/noobpro.shop/privkey.pem'),
+  //   cert: readFileSync(
+  //     '../../../etc/letsencrypt/live/noobpro.shop/fullchain.pem',
+  //   ),
+  // };
+  // const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create(AppModule);
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
   app.useGlobalPipes(
