@@ -98,4 +98,8 @@ https://noobpro.shop/api
 ![Copy_of_Untitled_Diagram_(1)](https://user-images.githubusercontent.com/94961333/163540594-855fd9f0-1cd6-4cdb-8088-554057289838.png)
 
 # troublehooting
-
+1. docker의 mysql이미지의 data file 초기화 및 mysql duplication 오류
+2. 협업관련 유연한 관리사이트가 없어 소통에 차질이생김
+3. 분당 7000번의 조회가 api로 입력될시 timeout발생 (미해결)
+4. 관계형 DB를 이용한 데이터를 eager lazy 형식으로 출력시 복잡한 구조로 출력되거나 필요없을때도 데이터가 보내짐
+5. 소캣통신으로 채팅방 구현시 중복로그인 방지
