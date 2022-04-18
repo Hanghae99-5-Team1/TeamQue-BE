@@ -19,9 +19,9 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { User } from '../entity/user.entity';
 import { RefreshService } from './refresh.service';
-import { AuthCredentialsDto } from './dto/auth-credential.dto';
-import { EditInfoDto } from './dto/modify-user.dto';
-import { authSignInDto } from './dto/auth-signin.dto';
+import { AuthCredentialsDto } from '../dto/auth-credential.dto';
+import { EditInfoDto } from '../dto/modify-user.dto';
+import { authSignInDto } from '../dto/auth-signin.dto';
 import {
   ApiBearerAuth,
   ApiBody,

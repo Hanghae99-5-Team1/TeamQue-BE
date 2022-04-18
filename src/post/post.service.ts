@@ -12,7 +12,7 @@ import { ClassService } from 'src/class/class.service';
 import { Todo } from '../entity/todo.entity';
 import { TodoRepository } from '../repository/todo.repository';
 import { Connection } from 'typeorm';
-import { PostTypes } from './model/postType.model';
+import { PostTypes } from './post.interface';
 import { PostRepository } from 'src/repository/post.repository';
 
 @Injectable()

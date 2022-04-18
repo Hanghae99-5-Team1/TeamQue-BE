@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { User } from 'src/entity/user.entity';
 import { EntityRepository, Repository } from 'typeorm';
 import { Post } from '../entity/post.entity';
-import { PostTypes } from '../post/model/postType.model';
+import { PostTypes } from '../post/post.interface';
 
 @EntityRepository(Post)
 export class PostRepository extends Repository<Post> {

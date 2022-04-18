@@ -12,8 +12,6 @@ import { RefreshService } from './refresh.service';
 import { EmailService } from './email.service';
 import { AlarmRepository } from 'src/repository/alarm.repository';
 import { StudentRepository } from 'src/repository/student.repository';
-import { ClassService } from 'src/class/class.service';
-import { ClassModule } from 'src/class/class.module';
 
 const jwtConfig = config.get('jwt');
 

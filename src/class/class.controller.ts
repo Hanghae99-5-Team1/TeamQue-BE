@@ -13,11 +13,11 @@ import { GetUser } from 'src/user/get-user.decorator';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
 import { User } from 'src/entity/user.entity';
 import { ClassService } from './class.service';
-import { CreateClassDto } from './dto/create-class.dto';
-import { CreateDateDto } from './dto/create-date.dto';
-import { StudentStateDto } from './dto/studentState.dto';
-import { UpdateDateDto } from './dto/update-date.dto';
-import { CreateStudentDto } from './dto/create-student.dto';
+import { CreateClassDto } from '../dto/create-class.dto';
+import { CreateDateDto } from '../dto/create-date.dto';
+import { StudentStateDto } from '../dto/studentState.dto';
+import { UpdateDateDto } from '../dto/update-date.dto';
+import { CreateStudentDto } from '../dto/create-student.dto';
 import {
   ApiBearerAuth,
   ApiBody,

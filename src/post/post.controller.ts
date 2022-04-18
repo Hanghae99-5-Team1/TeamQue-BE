@@ -13,12 +13,11 @@ import { PostService } from './post.service';
 import { GetUser } from 'src/user/get-user.decorator';
 import { User } from 'src/entity/user.entity';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
-import { CreatePostDto } from './dto/creat-post.dto';
-import { CreateCommnetDto } from './dto/creat-comment.dto';
-import { CreateTodoDto } from './dto/creat-todo.dto';
+import { CreatePostDto } from '../dto/creat-post.dto';
+import { CreateCommnetDto } from '../dto/creat-comment.dto';
+import { CreateTodoDto } from '../dto/creat-todo.dto';
 import { Todo } from '../entity/todo.entity';
-import { changeOrderTodoDto } from './dto/changeOrder-todo.dto';
-import { isCompleteTodoDto } from './dto/isComplete-todo.dto';
+import { isCompleteTodoDto } from '../dto/isComplete-todo.dto';
 import {
   ApiBearerAuth,
   ApiBody,

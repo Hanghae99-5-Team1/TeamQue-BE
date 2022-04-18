@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import axios, { AxiosRequestConfig } from 'axios';
 import * as config from 'config';
 import { RefreshService } from './refresh.service';
-import { AuthCredentialsDto } from './dto/auth-credential.dto';
+import { AuthCredentialsDto } from '../dto/auth-credential.dto';
 import * as uuid from 'uuid';
 import { EmailService } from './email.service';
 import { Connection } from 'typeorm';
