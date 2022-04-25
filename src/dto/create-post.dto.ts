@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { PostTypes } from '../model/postType.model';
+import { PostTypes } from 'src/post/post.interface';
 
 export class CreatePostDto {
   @IsString({ message: '제목을 입력해주세요' })

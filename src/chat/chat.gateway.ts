@@ -120,7 +120,6 @@ export class ChatGateWay implements OnGatewayConnection, OnGatewayDisconnect {
       client.broadcast.to(String(classId)).emit('joinUser', { userId, name });
 
       Logger.debug(`[JoinRoom] User ${userId} entered the ${classId}`);
-
       this.roomMap.get(classId).get(userId).state = stateType.connect;
       client.data.classId = classId;
 
