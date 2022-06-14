@@ -2,7 +2,7 @@ import { User } from 'src/entity/user.entity';
 import { EntityRepository, Repository } from 'typeorm';
 import { Post } from '../entity/post.entity';
 import { Comment } from '../entity/comment.entity';
-import { CreateCommnetDto } from '../post/dto/creat-comment.dto';
+import { CreateCommnetDto } from 'src/dto/create-comment.dto';
 
 @EntityRepository(Comment)
 export class CommentRepository extends Repository<Comment> {

@@ -6,6 +6,13 @@ import { readFileSync } from 'fs';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { urlencoded, json } from 'body-parser';
+import {
+  utilities as nestWinstonModuleUtilities,
+  WinstonModule,
+  WINSTON_MODULE_NEST_PROVIDER,
+} from 'nest-winston';
+import * as winston from 'winston';
+import * as winstonDaily from 'winston-daily-rotate-file';
 
 async function bootstrap() {
   // const httpsOptions = {
@@ -15,7 +22,52 @@ async function bootstrap() {
   //   ),
   // };
   // const app = await NestFactory.create(AppModule, { httpsOptions });
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger({
+      transports: [
+        new winston.transports.Console({
+          level: 'debug',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            nestWinstonModuleUtilities.format.nestLike('NestWinston', {
+              prettyPrint: true,
+            }),
+          ),
+        }),
+        new winstonDaily({
+          level: 'info', // info 레벨의 경우
+          datePattern: 'YYYY-MM-DD',
+          dirname: '../logs', // 로그 파일이 저장될 경로
+          filename: `%DATE%.log`, // 생성될 파일 이름
+          format: winston.format.combine(
+            winston.format.timestamp({
+              format: 'YYYY-MM-DD HH:mm:ss',
+            }),
+            winston.format.printf(
+              (info) =>
+                `[NestWinston]${info.level}   ${info.timestamp} ${info.message}`,
+            ),
+          ),
+          maxFiles: 30, // 30 Days saved
+          json: false,
+          zippedArchive: true,
+        }),
+        new winston.transports.File({
+          filename: '../logs/errors.log',
+          level: 'error',
+          format: winston.format.combine(
+            winston.format.timestamp({
+              format: 'YYYY-MM-DD HH:mm:ss',
+            }),
+            winston.format.printf(
+              (info) =>
+                `[NestWinston]${info.level}   ${info.timestamp} ${info.message}`,
+            ),
+          ),
+        }),
+      ],
+    }),
+  });
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
   app.useGlobalPipes(
